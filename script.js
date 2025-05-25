@@ -21,14 +21,13 @@ function initializeGoogleAuth() {
     return;
   }
 
-  // Ensure task-buttons is hidden on load
   const taskButtons = document.getElementById('task-buttons');
   taskButtons.classList.add('hidden');
   taskButtons.classList.remove('visible');
 
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
     callback: (tokenResponse) => {
       accessToken = tokenResponse.access_token;
       console.log('New access token:', accessToken);
@@ -57,25 +56,33 @@ function initializeGoogleAuth() {
 }
 
 async function fetchUserInfo() {
-  const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-  const userInfo = await response.json();
-  console.log('UserInfo response:', userInfo);
-  if (userInfo.hd !== 'graniteschools.org') {
-    console.error('User not from graniteschools.org');
-    google.accounts.oauth2.revoke(accessToken);
+  try {
+    const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const userInfo = await response.json();
+    console.log('UserInfo response:', userInfo);
+    if (userInfo.hd !== 'graniteschools.org') {
+      console.error('User not from graniteschools.org');
+      google.accounts.oauth2.revoke(accessToken);
+      logout();
+      return;
+    }
+    document.getElementById('user-info').innerText = `Welcome, ${userInfo.name} (${userInfo.email})`;
+    localStorage.setItem('userEmail', userInfo.email);
+    localStorage.setItem('userName', userInfo.name);
+    document.getElementById('login-btn').classList.add('hidden');
+    const taskButtons = document.getElementById('task-buttons');
+    taskButtons.classList.remove('hidden');
+    taskButtons.classList.add('visible');
+    initGoogleSheets();
+  } catch (error) {
+    console.error('Error fetching user info:', error);
     logout();
-    return;
   }
-  document.getElementById('user-info').innerText = `Welcome, ${userInfo.name} (${userInfo.email})`;
-  localStorage.setItem('userEmail', userInfo.email);
-  localStorage.setItem('userName', userInfo.name);
-  document.getElementById('login-btn').classList.add('hidden');
-  const taskButtons = document.getElementById('task-buttons');
-  taskButtons.classList.remove('hidden');
-  taskButtons.classList.add('visible');
-  initGoogleSheets();
 }
 
 function logout() {

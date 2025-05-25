@@ -77,6 +77,12 @@ button:hover {
   gap: 20px;
   margin-bottom: 20px;
 }
+#logout-btn {
+  background-color: #ef4444;
+}
+#logout-btn:hover {
+  background-color: #dc2626;
+}
 #create-work-btn {
   background-color: #10b981;
 }

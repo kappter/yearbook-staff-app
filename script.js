@@ -160,14 +160,15 @@ document.getElementById('logout-btn').onclick = logout;
 document.getElementById('create-form').onsubmit = async (e) => {
   e.preventDefault();
   const taskData = {
-    userEmail: localStorage.getItem('userEmail'),
-    userName: localStorage.getItem('userName'),
-    team: document.getElementById('team').value,
-    taskType: document.getElementById('task-type').value,
-    description: document.getElementById('description').value,
-    timeSpent: document.getElementById('estimated-time').value,
-    status: 'Open'
-  };
+  userEmail: localStorage.getItem('userEmail'),
+  userName: localStorage.getItem('userName'),
+  team: openTasks.find(task => task.rowIndex == rowIndex).team || '',
+  taskType: openTasks.find(task => task.rowIndex == rowIndex).taskType || '',
+  description: openTasks.find(task => task.rowIndex == rowIndex).description,
+  artifactLink: document.getElementById('artifact-link').value,
+  timeSpent: document.getElementById('actual-time').value,
+  status: 'Pending'
+};
   await appendTask(taskData);
   document.getElementById('create-modal').classList.add('hidden');
   document.getElementById('create-form').reset();

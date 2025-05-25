@@ -13,6 +13,14 @@ function initializeGoogleAuth() {
     hd: 'graniteschools.org'
   });
 
+  // Check if already logged in (from localStorage)
+  if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
+    document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
+    document.getElementById('login-btn').classList.add('hidden');
+    document.getElementById('task-buttons').classList.remove('hidden');
+    initGoogleSheets();
+  }
+
   document.getElementById('login-btn').onclick = () => {
     tokenClient.requestAccessToken();
   };
@@ -27,6 +35,8 @@ async function fetchUserInfo() {
   const userInfo = await response.json();
   if (userInfo.hd !== 'graniteschools.org') {
     console.error('User not from graniteschools.org');
+    google.accounts.oauth2.revoke(accessToken);
+    logout();
     return;
   }
   document.getElementById('user-info').innerText = `Welcome, ${userInfo.name} (${userInfo.email})`;
@@ -35,6 +45,18 @@ async function fetchUserInfo() {
   document.getElementById('login-btn').classList.add('hidden');
   document.getElementById('task-buttons').classList.remove('hidden');
   initGoogleSheets();
+}
+
+function logout() {
+  if (accessToken) {
+    google.accounts.oauth2.revoke(accessToken);
+  }
+  accessToken = null;
+  localStorage.removeItem('userEmail');
+  localStorage.removeItem('userName');
+  document.getElementById('user-info').innerText = '';
+  document.getElementById('login-btn').classList.remove('hidden');
+  document.getElementById('task-buttons').classList.add('hidden');
 }
 
 function initGoogleSheets() {

@@ -1,30 +1,166 @@
-function initGoogleAuth() {
-  gapi.load('client:auth2', () => {
-    gapi.client.init({
-      clientId: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
-      scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets',
-      redirect_uri: 'https://kappter.github.io/yearbook-staff-app/',
-      hosted_domain: 'graniteschools.org'
-    }).then(() => {
-      const auth = gapi.auth2.getAuthInstance();
-      auth.isSignedIn.listen(updateSignInStatus);
-      updateSignInStatus(auth.isSignedIn.get());
-      document.getElementById('login-btn').onclick = () => auth.signIn();
-    }, (error) => {
-      console.error('Auth initialization error:', error.details || error);
-    });
+let tokenClient;
+let accessToken = null;
+let openTasks = [];
+
+function initializeGoogleAuth() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets',
+    callback: (tokenResponse) => {
+      accessToken = tokenResponse.access_token;
+      fetchUserInfo();
+    },
+    hd: 'graniteschools.org'
+  });
+
+  document.getElementById('login-btn').onclick = () => {
+    tokenClient.requestAccessToken();
+  };
+}
+
+async function fetchUserInfo() {
+  const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  const userInfo = await response.json();
+  if (userInfo.hd !== 'graniteschools.org') {
+    console.error('User not from graniteschools.org');
+    return;
+  }
+  document.getElementById('user-info').innerText = `Welcome, ${userInfo.name} (${userInfo.email})`;
+  localStorage.setItem('userEmail', userInfo.email);
+  localStorage.setItem('userName', userInfo.name);
+  document.getElementById('login-btn').classList.add('hidden');
+  document.getElementById('task-buttons').classList.remove('hidden');
+  initGoogleSheets();
+}
+
+function initGoogleSheets() {
+  loadOpenTasks();
+}
+
+async function loadOpenTasks() {
+  const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A2:K', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`
+    }
+  });
+  const data = await response.json();
+  const rows = data.values || [];
+  openTasks = rows
+    .filter(row => row[7] === 'Open' && row[0] === localStorage.getItem('userEmail'))
+    .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+  const taskSelect = document.getElementById('task-select');
+  taskSelect.innerHTML = '<option value="">Select a task</option>';
+  openTasks.forEach(task => {
+    const option = document.createElement('option');
+    option.value = task.rowIndex;
+    option.text = task.description;
+    taskSelect.appendChild(option);
   });
 }
 
-function updateSignInStatus(isSignedIn) {
-  if (isSignedIn) {
-    const profile = gapi.auth2.getAuthInstance().currentUser.get().getBasicProfile();
-    document.getElementById('user-info').innerText = `Welcome, ${profile.getName()} (${profile.getEmail()})`;
-    localStorage.setItem('userEmail', profile.getEmail());
-    localStorage.setItem('userName', profile.getName());
-  } else {
-    document.getElementById('user-info').innerText = '';
-  }
+async function appendTask(taskData) {
+  const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      values: [[
+        taskData.userEmail,
+        taskData.userName,
+        taskData.team,
+        taskData.taskType,
+        taskData.description,
+        taskData.artifactLink || '',
+        taskData.timeSpent || '',
+        taskData.status,
+        taskData.editorNotes || '',
+        new Date().toISOString(),
+        taskData.editorEmail || ''
+      ]]
+    })
+  });
+  return response.json();
 }
 
-window.onload = initGoogleAuth;
+// UI Event Listeners
+document.getElementById('create-work-btn').onclick = () => {
+  document.getElementById('create-modal').classList.remove('hidden');
+};
+
+document.getElementById('report-work-btn').onclick = () => {
+  document.getElementById('report-modal').classList.remove('hidden');
+};
+
+document.getElementById('create-cancel').onclick = () => {
+  document.getElementById('create-modal').classList.add('hidden');
+};
+
+document.getElementById('report-cancel').onclick = () => {
+  document.getElementById('report-modal').classList.add('hidden');
+};
+
+document.getElementById('create-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const taskData = {
+    userEmail: localStorage.getItem('userEmail'),
+    userName: localStorage.getItem('userName'),
+    team: document.getElementById('team').value,
+    taskType: document.getElementById('task-type').value,
+    description: document.getElementById('description').value,
+    timeSpent: document.getElementById('estimated-time').value,
+    status: 'Open'
+  };
+  await appendTask(taskData);
+  document.getElementById('create-modal').classList.add('hidden');
+  document.getElementById('create-form').reset();
+  loadOpenTasks();
+};
+
+document.getElementById('report-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const rowIndex = document.getElementById('task-select').value;
+  if (!rowIndex) return;
+  const taskData = {
+    userEmail: localStorage.getItem('userEmail'),
+    userName: localStorage.getItem('userName'),
+    team: '',
+    taskType: '',
+    description: openTasks.find(task => task.rowIndex == rowIndex).description,
+    artifactLink: document.getElementById('artifact-link').value,
+    timeSpent: document.getElementById('actual-time').value,
+    status: 'Pending'
+  };
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A${rowIndex}:K${rowIndex}?valueInputOption=RAW`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      values: [[
+        taskData.userEmail,
+        taskData.userName,
+        taskData.team,
+        taskData.taskType,
+        taskData.description,
+        taskData.artifactLink,
+        taskData.timeSpent,
+        taskData.status,
+        taskData.editorNotes || '',
+        new Date().toISOString(),
+        taskData.editorEmail || ''
+      ]]
+    })
+  });
+  document.getElementById('report-modal').classList.add('hidden');
+  document.getElementById('report-form').reset();
+  loadOpenTasks();
+};
+
+window.onload = initializeGoogleAuth;

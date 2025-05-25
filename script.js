@@ -3,6 +3,11 @@ let accessToken = null;
 let openTasks = [];
 
 function initializeGoogleAuth() {
+  // Ensure task-buttons is hidden on load
+  const taskButtons = document.getElementById('task-buttons');
+  taskButtons.classList.add('hidden');
+  taskButtons.classList.remove('visible');
+
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
     scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/spreadsheets',
@@ -17,7 +22,8 @@ function initializeGoogleAuth() {
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
-    document.getElementById('task-buttons').classList.remove('hidden');
+    taskButtons.classList.remove('hidden');
+    taskButtons.classList.add('visible');
     initGoogleSheets();
   }
 
@@ -43,7 +49,9 @@ async function fetchUserInfo() {
   localStorage.setItem('userEmail', userInfo.email);
   localStorage.setItem('userName', userInfo.name);
   document.getElementById('login-btn').classList.add('hidden');
-  document.getElementById('task-buttons').classList.remove('hidden');
+  const taskButtons = document.getElementById('task-buttons');
+  taskButtons.classList.remove('hidden');
+  taskButtons.classList.add('visible');
   initGoogleSheets();
 }
 
@@ -56,7 +64,9 @@ function logout() {
   localStorage.removeItem('userName');
   document.getElementById('user-info').innerText = '';
   document.getElementById('login-btn').classList.remove('hidden');
-  document.getElementById('task-buttons').classList.add('hidden');
+  const taskButtons = document.getElementById('task-buttons');
+  taskButtons.classList.add('hidden');
+  taskButtons.classList.remove('visible');
 }
 
 function initGoogleSheets() {
@@ -187,4 +197,5 @@ document.getElementById('report-form').onsubmit = async (e) => {
   loadOpenTasks();
 };
 
-window.onload = initializeGoogleAuth;
+// Use DOMContentLoaded to ensure script runs after DOM is loaded
+document.addEventListener('DOMContentLoaded', initializeGoogleAuth);

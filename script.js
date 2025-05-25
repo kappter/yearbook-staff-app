@@ -1,6 +1,7 @@
 let tokenClient;
 let accessToken = null;
 let openTasks = [];
+const { loadOpenTasks, appendTask } = window.utils;
 
 function loadGoogleScript() {
   const script = document.createElement('script');
@@ -97,7 +98,17 @@ function logout() {
 }
 
 function initGoogleSheets() {
-  loadOpenTasks();
+  loadOpenTasks(accessToken, localStorage.getItem('userEmail')).then(tasks => {
+    openTasks = tasks;
+    const taskSelect = document.getElementById('task-select');
+    taskSelect.innerHTML = '<option value="">Select a task</option>';
+    openTasks.forEach(task => {
+      const option = document.createElement('option');
+      option.value = task.rowIndex;
+      option.text = task.description;
+      taskSelect.appendChild(option);
+    });
+  });
 }
 
 async function loadOpenTasks() {
@@ -183,12 +194,15 @@ document.getElementById('create-form').onsubmit = async (e) => {
     taskType: document.getElementById('task-type').value,
     description: document.getElementById('description').value,
     timeSpent: document.getElementById('estimated-time').value,
-    status: 'Open'
+    status: 'Open',
+    artifactLink: '',
+    editorNotes: '',
+    editorEmail: ''
   };
-  await appendTask(taskData);
+  await appendTask(accessToken, taskData);
   document.getElementById('create-modal').classList.add('hidden');
   document.getElementById('create-form').reset();
-  loadOpenTasks();
+  initGoogleSheets();
 };
 
 document.getElementById('report-form').onsubmit = async (e) => {

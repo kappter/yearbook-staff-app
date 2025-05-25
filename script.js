@@ -50,6 +50,23 @@ function initializeGoogleAuth() {
   };
 }
 
+async function deleteTask(rowIndex) {
+  if (deletionCount >= 3) return alert('Deletion limit reached for this week.');
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A${rowIndex}:K${rowIndex}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` }
+  });
+  sendDeletionNotification(rowIndex);
+  loadOpenTasks();
+}
+async function sendDeletionNotification(rowIndex) {
+  await fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rowIndex, email: 'kkapptie@graniteschools.org', message: 'Task deleted' })
+  });
+}
+
 async function fetchUserInfo() {
   const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
     headers: {

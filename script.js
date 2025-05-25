@@ -11,7 +11,7 @@ function initGoogleAuth() {
       updateSignInStatus(auth.isSignedIn.get());
       document.getElementById('login-btn').onclick = () => auth.signIn();
     }, (error) => {
-      console.error('Auth initialization error:', error);
+      console.error('Auth initialization error:', error.details || error);
     });
   });
 }

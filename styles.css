@@ -30,7 +30,17 @@ button:hover {
   background-color: #2563eb;
 }
 .hidden {
-  display: none;
+  display: none !important; /* Ensure this overrides other styles */
+}
+.task-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr; /* Adjusted for 3 buttons */
+  gap: 20px;
+  margin-bottom: 20px;
+  visibility: hidden; /* Hide by default until JS confirms login */
+}
+.task-buttons.visible {
+  visibility: visible; /* Show when JS confirms login */
 }
 .modal {
   position: fixed;
@@ -70,12 +80,6 @@ button:hover {
 }
 .modal .buttons button {
   margin-left: 10px;
-}
-.task-buttons {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
 }
 #logout-btn {
   background-color: #ef4444;

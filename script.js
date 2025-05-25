@@ -34,7 +34,12 @@ function initializeGoogleAuth() {
       console.log('New access token:', accessToken); // Debug token
       fetchUserInfo();
     },
-    hd: 'graniteschools.org'
+    hd: 'graniteschools.org',
+    // Fallback for popup blocking
+    error_callback: (error) => {
+      console.error('OAuth error:', error);
+      alert('Popup blocked by browser. Please allow popups for this site and try again.');
+    }
   });
 
   // Check if already logged in (from localStorage)

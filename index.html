@@ -3,16 +3,89 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://accounts.google.com; connect-src 'self' https://*.google.com;">
   <title>Yearbook Staff App</title>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/; connect-src 'self' https://*.google.com;">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="stylesheet" href="styles.css">
-  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body class="bg-gray-100">
-  <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Yearbook Staff Management</h1>
-    <div id="user-info" class="mb-4"></div>
-    <button id="login-btn" class="bg-blue-500 text-white p-2 rounded">Login with Granite</button>
+<body>
+  <div class="container">
+    <h1>Yearbook Staff Management</h1>
+    <div id="user-info"></div>
+    <div id="g_id_onload"
+         data-client_id="782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com"
+         data-login_uri="https://kappter.github.io/yearbook-staff-app/"
+         data-auto_prompt="false"
+         data-hd="graniteschools.org">
+    </div>
+    <button id="login-btn">Login with Granite</button>
+    <div id="task-buttons" class="hidden">
+      <button id="create-work-btn">Create Work</button>
+      <button id="report-work-btn">Report Work</button>
+    </div>
+
+    <!-- Create Work Modal -->
+    <div id="create-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Create Work</h2>
+        <form id="create-form">
+          <div>
+            <label>Task Type</label>
+            <select id="task-type">
+              <option value="Photographer">Photographer</option>
+              <option value="Headline Writer">Headline Writer</option>
+              <option value="Designer">Designer</option>
+            </select>
+          </div>
+          <div>
+            <label>Team</label>
+            <select id="team">
+              <option value="Photography">Photography</option>
+              <option value="Writing">Writing</option>
+              <option value="Design">Design</option>
+            </select>
+          </div>
+          <div>
+            <label>Description</label>
+            <textarea id="description" rows="3"></textarea>
+          </div>
+          <div>
+            <label>Estimated Time (Minutes)</label>
+            <input type="number" id="estimated-time" min="1" max="180">
+          </div>
+          <div class="buttons">
+            <button type="button" id="create-cancel">Cancel</button>
+            <button type="submit">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Report Work Modal -->
+    <div id="report-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Report Work</h2>
+        <form id="report-form">
+          <div>
+            <label>Select Task</label>
+            <select id="task-select"></select>
+          </div>
+          <div>
+            <label>Artifact Link</label>
+            <input type="url" id="artifact-link" placeholder="e.g., Google Drive link">
+          </div>
+          <div>
+            <label>Actual Time Spent (Minutes)</label>
+            <input type="number" id="actual-time" min="1" max="180">
+          </div>
+          <div class="buttons">
+            <button type="button" id="report-cancel">Cancel</button>
+            <button type="submit">Submit</button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
   <script src="script.js"></script>
 </body>

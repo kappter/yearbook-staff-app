@@ -125,8 +125,9 @@ document.getElementById('create-cancel').onclick = () => {
 
 document.getElementById('report-cancel').onclick = () => {
   document.getElementById('report-modal').classList.add('hidden');
-  document.getElementById('logout-btn').onclick = logout;
 };
+
+document.getElementById('logout-btn').onclick = logout;
 
 document.getElementById('create-form').onsubmit = async (e) => {
   e.preventDefault();

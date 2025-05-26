@@ -59,10 +59,34 @@
     </div>
     <button id="login-btn">Login with Granite</button>
     <div id="task-buttons" class="task-buttons hidden">
-      <button id="create-work-btn">Create Work</button>
-      <button id="report-work-btn">Report Work</button>
-      <button id="logout-btn">Logout</button>
+  <button id="create-work-btn">Create Work</button>
+  <button id="report-work-btn">Report Work</button>
+  <button id="weekly-report-btn">Weekly Report</button>
+  <button id="overall-report-btn">Overall Report</button>
+  <button id="logout-btn">Logout</button>
+</div>
+
+<!-- Weekly Report Modal -->
+<div id="weekly-report-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Weekly Report</h2>
+    <div id="weekly-report-content"></div>
+    <div class="buttons">
+      <button id="weekly-report-close">Close</button>
     </div>
+  </div>
+</div>
+
+<!-- Overall Report Modal -->
+<div id="overall-report-modal" class="modal hidden">
+  <div class="modal-content">
+    <h2>Overall Activity Report</h2>
+    <div id="overall-report-content"></div>
+    <div class="buttons">
+      <button id="overall-report-close">Close</button>
+    </div>
+  </div>
+</div>
 
     <!-- First Login Modal -->
     <div id="first-login-modal" class="modal hidden">

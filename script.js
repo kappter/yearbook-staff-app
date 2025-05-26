@@ -216,7 +216,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
     editorNotes: '',
     editorEmail: ''
   };
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A${rowIndex}:K${rowIndex}?valueInputOption=RAW`, {
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A${rowIndex}:M${rowIndex}?valueInputOption=RAW`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -234,7 +234,9 @@ document.getElementById('report-form').onsubmit = async (e) => {
         taskData.status,
         taskData.editorNotes,
         new Date().toISOString(),
-        taskData.editorEmail
+        taskData.editorEmail,
+        localStorage.getItem('userTeam'), // Column L: Team
+        localStorage.getItem('userRole')  // Column M: Role
       ]]
     })
   });

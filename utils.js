@@ -1,4 +1,4 @@
-async function loadOpenTasks(accessToken, userEmail, userTeam) {
+async function loadOpenTasks(accessToken, userEmail, userTeam, userRole) {
   try {
     console.log('Access token for loadOpenTasks:', accessToken);
     const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A2:K', {
@@ -7,6 +7,13 @@ async function loadOpenTasks(accessToken, userEmail, userTeam) {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rows = data.values || [];
+    if (userRole === 'Advisor') {
+      // Advisors see all open tasks
+      return rows
+        .filter(row => row[7] === 'Open')
+        .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+    }
+    // Staff and Editors see only their team's open tasks
     return rows
       .filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] === userTeam)
       .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));

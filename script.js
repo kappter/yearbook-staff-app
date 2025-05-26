@@ -113,7 +113,8 @@ function logout() {
 function initGoogleSheets() {
   const userEmail = localStorage.getItem('userEmail');
   const userTeam = localStorage.getItem('userTeam');
-  window.utils.loadOpenTasks(accessToken, userEmail, userTeam).then(tasks => {
+  const userRole = localStorage.getItem('userRole');
+  window.utils.loadOpenTasks(accessToken, userEmail, userTeam, userRole).then(tasks => {
     openTasks = tasks;
     const taskSelect = document.getElementById('task-select');
     taskSelect.innerHTML = '<option value="">Select a task</option>';

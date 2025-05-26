@@ -31,6 +31,7 @@ function initializeGoogleAuth() {
     callback: (tokenResponse) => {
       accessToken = tokenResponse.access_token;
       console.log('New access token:', accessToken);
+      console.log('Token response:', tokenResponse);
       fetchUserInfo();
     },
     hd: 'graniteschools.org',
@@ -43,9 +44,7 @@ function initializeGoogleAuth() {
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
-    taskButtons.classList.remove('hidden');
-    taskButtons.classList.add('visible');
-    initGoogleSheets();
+    checkFirstLogin();
   } else {
     tokenClient.requestAccessToken();
   }
@@ -75,13 +74,23 @@ async function fetchUserInfo() {
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
+    checkFirstLogin();
+  } catch (error) {
+    console.error('Error fetching user info:', error);
+    logout();
+  }
+}
+
+function checkFirstLogin() {
+  const userTeam = localStorage.getItem('userTeam');
+  const userRole = localStorage.getItem('userRole');
+  if (!userTeam || !userRole) {
+    document.getElementById('first-login-modal').classList.remove('hidden');
+  } else {
     const taskButtons = document.getElementById('task-buttons');
     taskButtons.classList.remove('hidden');
     taskButtons.classList.add('visible');
     initGoogleSheets();
-  } catch (error) {
-    console.error('Error fetching user info:', error);
-    logout();
   }
 }
 
@@ -92,6 +101,8 @@ function logout() {
   accessToken = null;
   localStorage.removeItem('userEmail');
   localStorage.removeItem('userName');
+  localStorage.removeItem('userTeam');
+  localStorage.removeItem('userRole');
   document.getElementById('user-info').innerText = '';
   document.getElementById('login-btn').classList.remove('hidden');
   const taskButtons = document.getElementById('task-buttons');
@@ -101,7 +112,8 @@ function logout() {
 
 function initGoogleSheets() {
   const userEmail = localStorage.getItem('userEmail');
-  window.utils.loadOpenTasks(accessToken, userEmail).then(tasks => {
+  const userTeam = localStorage.getItem('userTeam');
+  window.utils.loadOpenTasks(accessToken, userEmail, userTeam).then(tasks => {
     openTasks = tasks;
     const taskSelect = document.getElementById('task-select');
     taskSelect.innerHTML = '<option value="">Select a task</option>';
@@ -113,6 +125,40 @@ function initGoogleSheets() {
     });
   });
 }
+
+// First Login Form Submission
+document.getElementById('first-login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const userTeam = document.getElementById('user-team').value;
+  const userRole = document.getElementById('user-role').value;
+  if (!userTeam || !userRole) {
+    alert('Please select both a team and a role.');
+    return;
+  }
+  localStorage.setItem('userTeam', userTeam);
+  localStorage.setItem('userRole', userRole);
+  
+  // Store team and role in the Sheet
+  const taskData = {
+    userEmail: localStorage.getItem('userEmail'),
+    userName: localStorage.getItem('userName'),
+    team: userTeam,
+    taskType: 'Profile Setup',
+    description: `User assigned to ${userTeam} as ${userRole}`,
+    timeSpent: '0',
+    status: 'Completed',
+    artifactLink: '',
+    editorNotes: '',
+    editorEmail: ''
+  };
+  await window.utils.appendTask(accessToken, taskData);
+  
+  document.getElementById('first-login-modal').classList.add('hidden');
+  const taskButtons = document.getElementById('task-buttons');
+  taskButtons.classList.remove('hidden');
+  taskButtons.classList.add('visible');
+  initGoogleSheets();
+};
 
 // UI Event Listeners
 document.getElementById('create-work-btn').onclick = () => {

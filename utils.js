@@ -1,6 +1,6 @@
-async function loadOpenTasks(accessToken, userEmail) {
+async function loadOpenTasks(accessToken, userEmail, userTeam) {
   try {
-    console.log('Access token for loadOpenTasks:', accessToken); // Debug token
+    console.log('Access token for loadOpenTasks:', accessToken);
     const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A2:K', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -8,7 +8,7 @@ async function loadOpenTasks(accessToken, userEmail) {
     const data = await response.json();
     const rows = data.values || [];
     return rows
-      .filter(row => row[7] === 'Open' && row[0] === userEmail)
+      .filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] === userTeam)
       .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
   } catch (error) {
     console.error('Error loading tasks:', error);
@@ -39,7 +39,6 @@ async function appendTask(accessToken, taskData) {
   return response.json();
 }
 
-// Export for use in script.js
 if (typeof module === 'undefined') {
   window.utils = { loadOpenTasks, appendTask };
 }

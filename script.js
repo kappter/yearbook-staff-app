@@ -139,7 +139,6 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
   localStorage.setItem('userTeam', userTeam);
   localStorage.setItem('userRole', userRole);
   
-  // Store team and role in the Sheet
   const taskData = {
     userEmail: localStorage.getItem('userEmail'),
     userName: localStorage.getItem('userName'),
@@ -150,7 +149,9 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
     status: 'Completed',
     artifactLink: '',
     editorNotes: '',
-    editorEmail: ''
+    editorEmail: '',
+    userTeam: userTeam,
+    userRole: userRole
   };
   await window.utils.appendTask(accessToken, taskData);
   
@@ -159,6 +160,82 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
   taskButtons.classList.remove('hidden');
   taskButtons.classList.add('visible');
   initGoogleSheets();
+};
+
+// Weekly Report
+document.getElementById('weekly-report-btn').onclick = async () => {
+  const userEmail = localStorage.getItem('userEmail');
+  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail);
+  
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
+  startOfWeek.setHours(0, 0, 0, 0);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+  endOfWeek.setHours(23, 59, 59, 999);
+  
+  const weeklyTasks = tasks.filter(task => {
+    const taskDate = new Date(task.submissionDate);
+    return taskDate >= startOfWeek && taskDate <= endOfWeek;
+  });
+  
+  const content = document.getElementById('weekly-report-content');
+  if (weeklyTasks.length === 0) {
+    content.innerHTML = '<p>No tasks completed this week.</p>';
+  } else {
+    let totalTime = 0;
+    let html = '<ul>';
+    weeklyTasks.forEach(task => {
+      html += `<li>${task.description} (${task.timeSpent} minutes, ${task.status})</li>`;
+      totalTime += task.timeSpent;
+    });
+    html += '</ul>';
+    html += `<p>Total Time This Week: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
+    content.innerHTML = html;
+  }
+  document.getElementById('weekly-report-modal').classList.remove('hidden');
+};
+
+// Overall Report
+document.getElementById('overall-report-btn').onclick = async () => {
+  const userEmail = localStorage.getItem('userEmail');
+  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail);
+  
+  const periods = [
+    { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
+    { name: '2026 Term 1', start: new Date('2025-09-01'), end: new Date('2025-11-30') },
+    { name: '2026 Term 2', start: new Date('2025-12-01'), end: new Date('2026-02-28') },
+    { name: '2026 Term 3', start: new Date('2026-03-01'), end: new Date('2026-05-31') },
+    { name: 'Post Publication', start: new Date('2026-06-01'), end: new Date('2026-08-31') }
+  ];
+  
+  const report = periods.map(period => {
+    const periodTasks = tasks.filter(task => {
+      const taskDate = new Date(task.submissionDate);
+      return taskDate >= period.start && taskDate <= period.end && task.status === 'Approved';
+    });
+    const totalTime = periodTasks.reduce((sum, task) => sum + task.timeSpent, 0);
+    return { period: period.name, totalTime };
+  });
+  
+  const content = document.getElementById('overall-report-content');
+  let html = '<ul>';
+  report.forEach(r => {
+    html += `<li>${r.period}: ${r.totalTime} minutes (${(r.totalTime / 60).toFixed(1)} hours)</li>`;
+  });
+  html += '</ul>';
+  content.innerHTML = html;
+  document.getElementById('overall-report-modal').classList.remove('hidden');
+};
+
+// Close Modals
+document.getElementById('weekly-report-close').onclick = () => {
+  document.getElementById('weekly-report-modal').classList.add('hidden');
+};
+
+document.getElementById('overall-report-close').onclick = () => {
+  document.getElementById('overall-report-modal').classList.add('hidden');
 };
 
 // UI Event Listeners
@@ -192,7 +269,9 @@ document.getElementById('create-form').onsubmit = async (e) => {
     status: 'Open',
     artifactLink: '',
     editorNotes: '',
-    editorEmail: ''
+    editorEmail: '',
+    userTeam: localStorage.getItem('userTeam'),
+    userRole: localStorage.getItem('userRole')
   };
   await window.utils.appendTask(accessToken, taskData);
   document.getElementById('create-modal').classList.add('hidden');
@@ -235,8 +314,8 @@ document.getElementById('report-form').onsubmit = async (e) => {
         taskData.editorNotes,
         new Date().toISOString(),
         taskData.editorEmail,
-        localStorage.getItem('userTeam'), // Column L: Team
-        localStorage.getItem('userRole')  // Column M: Role
+        localStorage.getItem('userTeam'),
+        localStorage.getItem('userRole')
       ]]
     })
   });

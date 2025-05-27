@@ -52,6 +52,19 @@ function initializeGoogleAuth() {
   document.getElementById('login-btn').onclick = () => {
     tokenClient.requestAccessToken();
   };
+
+  // Theme Toggle Logic
+  const themeToggle = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  themeToggle.textContent = currentTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+
+  themeToggle.addEventListener('click', () => {
+    const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    themeToggle.textContent = newTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+  });
 }
 
 async function fetchUserInfo() {

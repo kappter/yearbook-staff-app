@@ -46,10 +46,53 @@
   <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/; connect-src 'self' https://*.google.com https://*.googleapis.com;">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      padding: 5px 10px;
+      font-size: 10px;
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+      z-index: 1000;
+    }
+    .footer a {
+      color: var(--link-color);
+      text-decoration: none;
+      margin: 0 5px;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px;
+      background-color: var(--header-bg);
+    }
+    .theme-toggle {
+      cursor: pointer;
+      font-size: 14px;
+      padding: 5px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+    }
+    .theme-toggle:hover {
+      background-color: var(--button-hover-bg);
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
+  <div class="header">
     <h1>Yearbook Staff Management</h1>
+    <button id="theme-toggle" class="theme-toggle">Toggle Theme</button>
+  </div>
+  <div class="container">
     <div id="user-info"></div>
     <div id="g_id_onload"
          data-client_id="782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com"
@@ -59,34 +102,12 @@
     </div>
     <button id="login-btn">Login with Granite</button>
     <div id="task-buttons" class="task-buttons hidden">
-  <button id="create-work-btn">Create Work</button>
-  <button id="report-work-btn">Report Work</button>
-  <button id="weekly-report-btn">Weekly Report</button>
-  <button id="overall-report-btn">Overall Report</button>
-  <button id="logout-btn">Logout</button>
-</div>
-
-<!-- Weekly Report Modal -->
-<div id="weekly-report-modal" class="modal hidden">
-  <div class="modal-content">
-    <h2>Weekly Report</h2>
-    <div id="weekly-report-content"></div>
-    <div class="buttons">
-      <button id="weekly-report-close">Close</button>
+      <button id="create-work-btn">Create Work</button>
+      <button id="report-work-btn">Report Work</button>
+      <button id="weekly-report-btn">Weekly Report</button>
+      <button id="overall-report-btn">Overall Report</button>
+      <button id="logout-btn">Logout</button>
     </div>
-  </div>
-</div>
-
-<!-- Overall Report Modal -->
-<div id="overall-report-modal" class="modal hidden">
-  <div class="modal-content">
-    <h2>Overall Activity Report</h2>
-    <div id="overall-report-content"></div>
-    <div class="buttons">
-      <button id="overall-report-close">Close</button>
-    </div>
-  </div>
-</div>
 
     <!-- First Login Modal -->
     <div id="first-login-modal" class="modal hidden">
@@ -182,6 +203,36 @@
           </div>
         </form>
       </div>
+    </div>
+
+    <!-- Weekly Report Modal -->
+    <div id="weekly-report-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Weekly Report</h2>
+        <div id="weekly-report-content"></div>
+        <div class="buttons">
+          <button id="weekly-report-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Overall Report Modal -->
+    <div id="overall-report-modal" class="modal hidden">
+      <div class="modal-content">
+        <h2>Overall Activity Report</h2>
+        <div id="overall-report-content"></div>
+        <div class="buttons">
+          <button id="overall-report-close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fixed Footer -->
+    <div class="footer">
+      © 2025 Ken Kapptie | For educational use only | All rights reserved.
+      <a href="#">More tools like this</a> | 
+      <a href="#">Want your own?</a> | 
+      <a href="#">Learn by Typing</a>
     </div>
   </div>
   <script src="utils.js" defer></script>

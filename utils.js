@@ -12,6 +12,11 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetNa
         .filter(row => row[7] === 'Open')
         .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
     }
+    if (userRole === 'Editor') {
+      return rows
+        .filter(row => (row[7] === 'Open' || row[7] === 'Pending') && row[2] === userTeam)
+        .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+    }
     return rows
       .filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] === userTeam)
       .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
@@ -28,9 +33,9 @@ async function fetchUserTasks(accessToken, userEmail, sheetName) {
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
-    console.log(`Fetched data from ${sheetName}:`, data); // Debug log
+    console.log(`Fetched data from ${sheetName}:`, data);
     const rows = data.values || [];
-    console.log(`Parsed rows from ${sheetName}:`, rows); // Debug log
+    console.log(`Parsed rows from ${sheetName}:`, rows);
     let filteredTasks = rows;
     if (userEmail) {
       filteredTasks = rows.filter(row => row[0] === userEmail);
@@ -41,7 +46,7 @@ async function fetchUserTasks(accessToken, userEmail, sheetName) {
       status: row[7],
       submissionDate: row[9]
     }));
-    console.log(`Mapped tasks from ${sheetName}:`, mappedTasks); // Debug log
+    console.log(`Mapped tasks from ${sheetName}:`, mappedTasks);
     return mappedTasks;
   } catch (error) {
     console.error('Error fetching user tasks:', error);

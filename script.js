@@ -215,7 +215,11 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
 document.getElementById('weekly-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  const tasks = await window.utils.fetchUserTasks(accessToken, null, selectedTerm); // Pass null for userEmail
+const weeklyTasks = tasks.filter(task => {
+  const taskDate = new Date(task.submissionDate);
+  return taskDate >= startOfWeek && taskDate <= endOfWeek;
+});
   
   const now = new Date();
   const startOfWeek = new Date(now);
@@ -253,7 +257,11 @@ document.getElementById('weekly-report-btn').onclick = async () => {
 document.getElementById('overall-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  const tasks = await window.utils.fetchUserTasks(accessToken, null, selectedTerm); // Pass null for userEmail
+  const weeklyTasks = tasks.filter(task => {
+  const taskDate = new Date(task.submissionDate);
+  return taskDate >= startOfWeek && taskDate <= endOfWeek;
+});
   
   const periods = [
     { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },

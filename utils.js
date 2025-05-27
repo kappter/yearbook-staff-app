@@ -1,7 +1,7 @@
-async function loadOpenTasks(accessToken, userEmail, userTeam, userRole) {
+async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetName) {
   try {
     console.log('Access token for loadOpenTasks:', accessToken);
-    const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A2:M', {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:M`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -21,9 +21,9 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole) {
   }
 }
 
-async function fetchUserTasks(accessToken, userEmail) {
+async function fetchUserTasks(accessToken, userEmail, sheetName) {
   try {
-    const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A2:M', {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:M`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -43,8 +43,8 @@ async function fetchUserTasks(accessToken, userEmail) {
   }
 }
 
-async function appendTask(accessToken, taskData) {
-  const response = await fetch('https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', {
+async function appendTask(accessToken, taskData, sheetName) {
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({

@@ -85,6 +85,10 @@
     .theme-toggle:hover {
       background-color: var(--button-hover-bg);
     }
+    .term-selector {
+      text-align: center;
+      margin: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -101,6 +105,21 @@
          data-hd="graniteschools.org">
     </div>
     <button id="login-btn">Login with Granite</button>
+    <div id="term-selector" class="term-selector hidden">
+      <label for="term-select">Select Term: </label>
+      <select id="term-select">
+        <option value="Sheet1">Sheet1</option>
+        <option value="2025-26Summer">2025-26Summer</option>
+        <option value="2025-26Term01">2025-26Term01</option>
+        <option value="2025-26Term02">2025-26Term02</option>
+        <option value="2025-26Term03">2025-26Term03</option>
+        <option value="2025-26Term04">2025-26Term04</option>
+        <option value="Test01">Test01</option>
+        <option value="Test02">Test02</option>
+        <option value="Test03">Test03</option>
+        <option value="Test04">Test04</option>
+      </select>
+    </div>
     <div id="task-buttons" class="task-buttons hidden">
       <button id="create-work-btn">Create Work</button>
       <button id="report-work-btn">Report Work</button>
@@ -230,8 +249,9 @@
     <!-- Fixed Footer -->
     <div class="footer">
       © 2025 Ken Kapptie | For educational use only | All rights reserved.
-      <a href="https://kappter.github.io/portfolio/">More tools like this</a> | 
-      <a href="https://kappter.github.io/portfolio/proposal.html">Want your own?</a>
+      <a href="#">More tools like this</a> | 
+      <a href="#">Want your own?</a> | 
+      <a href="#">Learn by Typing</a>
     </div>
   </div>
   <script src="utils.js" defer></script>

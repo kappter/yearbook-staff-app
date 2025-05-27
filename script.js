@@ -34,6 +34,10 @@ function initializeGoogleAuth() {
   taskButtons.classList.add('hidden');
   taskButtons.classList.remove('visible');
 
+  const termSelector = document.getElementById('term-selector');
+  termSelector.classList.add('hidden');
+  termSelector.classList.remove('visible');
+
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
@@ -73,6 +77,16 @@ function initializeGoogleAuth() {
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     themeToggle.textContent = newTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+  });
+
+  // Term Selector Logic
+  const termSelect = document.getElementById('term-select');
+  const savedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  termSelect.value = savedTerm;
+  termSelect.addEventListener('change', () => {
+    const selectedTerm = termSelect.value;
+    localStorage.setItem('selectedTerm', selectedTerm);
+    initGoogleSheets();
   });
 }
 
@@ -114,6 +128,9 @@ function checkFirstLogin() {
     const taskButtons = document.getElementById('task-buttons');
     taskButtons.classList.remove('hidden');
     taskButtons.classList.add('visible');
+    const termSelector = document.getElementById('term-selector');
+    termSelector.classList.remove('hidden');
+    termSelector.classList.add('visible');
     initGoogleSheets();
   }
 }
@@ -127,18 +144,23 @@ function logout() {
   localStorage.removeItem('userName');
   localStorage.removeItem('userTeam');
   localStorage.removeItem('userRole');
+  localStorage.removeItem('selectedTerm');
   document.getElementById('user-info').innerText = '';
   document.getElementById('login-btn').classList.remove('hidden');
   const taskButtons = document.getElementById('task-buttons');
   taskButtons.classList.add('hidden');
   taskButtons.classList.remove('visible');
+  const termSelector = document.getElementById('term-selector');
+  termSelector.classList.add('hidden');
+  termSelector.classList.remove('visible');
 }
 
 function initGoogleSheets() {
   const userEmail = localStorage.getItem('userEmail');
   const userTeam = localStorage.getItem('userTeam');
   const userRole = localStorage.getItem('userRole');
-  window.utils.loadOpenTasks(accessToken, userEmail, userTeam, userRole).then(tasks => {
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  window.utils.loadOpenTasks(accessToken, userEmail, userTeam, userRole, selectedTerm).then(tasks => {
     openTasks = tasks;
     const taskSelect = document.getElementById('task-select');
     taskSelect.innerHTML = '<option value="">Select a task</option>';
@@ -151,7 +173,7 @@ function initGoogleSheets() {
   });
 }
 
-// First Login Form Submission
+// First Login Form Submission (Always write to Sheet1)
 document.getElementById('first-login-form').onsubmit = async (e) => {
   e.preventDefault();
   const userTeam = document.getElementById('user-team').value;
@@ -177,19 +199,23 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
     userTeam: userTeam,
     userRole: userRole
   };
-  await window.utils.appendTask(accessToken, taskData);
+  await window.utils.appendTask(accessToken, taskData, 'Sheet1');
   
   closeAllModals();
   const taskButtons = document.getElementById('task-buttons');
   taskButtons.classList.remove('hidden');
   taskButtons.classList.add('visible');
+  const termSelector = document.getElementById('term-selector');
+  termSelector.classList.remove('hidden');
+  termSelector.classList.add('visible');
   initGoogleSheets();
 };
 
 // Weekly Report
 document.getElementById('weekly-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail);
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
   
   const now = new Date();
   const startOfWeek = new Date(now);
@@ -206,7 +232,7 @@ document.getElementById('weekly-report-btn').onclick = async () => {
   
   const content = document.getElementById('weekly-report-content');
   if (weeklyTasks.length === 0) {
-    content.innerHTML = '<p>No tasks completed this week.</p>';
+    content.innerHTML = `<p>No tasks completed this week in ${selectedTerm}.</p>`;
   } else {
     let totalTime = 0;
     let html = '<ul>';
@@ -215,7 +241,7 @@ document.getElementById('weekly-report-btn').onclick = async () => {
       totalTime += task.timeSpent;
     });
     html += '</ul>';
-    html += `<p>Total Time This Week: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
+    html += `<p>Total Time This Week in ${selectedTerm}: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
     content.innerHTML = html;
   }
   closeAllModals();
@@ -226,7 +252,8 @@ document.getElementById('weekly-report-btn').onclick = async () => {
 // Overall Report
 document.getElementById('overall-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
-  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail);
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
   
   const periods = [
     { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
@@ -246,7 +273,7 @@ document.getElementById('overall-report-btn').onclick = async () => {
   });
   
   const content = document.getElementById('overall-report-content');
-  let html = '<ul>';
+  let html = `<p>Overall Report for ${selectedTerm}</p><ul>`;
   report.forEach(r => {
     html += `<li>${r.period}: ${r.totalTime} minutes (${(r.totalTime / 60).toFixed(1)} hours)</li>`;
   });
@@ -291,6 +318,7 @@ document.getElementById('logout-btn').onclick = logout;
 
 document.getElementById('create-form').onsubmit = async (e) => {
   e.preventDefault();
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   const taskData = {
     userEmail: localStorage.getItem('userEmail'),
     userName: localStorage.getItem('userName'),
@@ -305,7 +333,7 @@ document.getElementById('create-form').onsubmit = async (e) => {
     userTeam: localStorage.getItem('userTeam'),
     userRole: localStorage.getItem('userRole')
   };
-  await window.utils.appendTask(accessToken, taskData);
+  await window.utils.appendTask(accessToken, taskData, selectedTerm);
   closeAllModals();
   document.getElementById('create-form').reset();
   initGoogleSheets();
@@ -313,6 +341,7 @@ document.getElementById('create-form').onsubmit = async (e) => {
 
 document.getElementById('report-form').onsubmit = async (e) => {
   e.preventDefault();
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   const rowIndex = document.getElementById('task-select').value;
   if (!rowIndex) return;
   const taskData = {
@@ -327,7 +356,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
     editorNotes: '',
     editorEmail: ''
   };
-  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/Sheet1!A${rowIndex}:M${rowIndex}?valueInputOption=RAW`, {
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${selectedTerm}!A${rowIndex}:M${rowIndex}?valueInputOption=RAW`, {
     method: 'PUT',
     headers: {
       Authorization: `Bearer ${accessToken}`,

@@ -15,6 +15,15 @@ function loadGoogleScript() {
   document.head.appendChild(script);
 }
 
+// Helper function to close all modals
+function closeAllModals() {
+  const modals = document.querySelectorAll('.modal');
+  modals.forEach(modal => {
+    modal.classList.remove('visible');
+    modal.classList.add('hidden');
+  });
+}
+
 function initializeGoogleAuth() {
   if (!window.google) {
     console.error('Google Identity Services not loaded');
@@ -98,7 +107,9 @@ function checkFirstLogin() {
   const userTeam = localStorage.getItem('userTeam');
   const userRole = localStorage.getItem('userRole');
   if (!userTeam || !userRole) {
+    closeAllModals();
     document.getElementById('first-login-modal').classList.remove('hidden');
+    document.getElementById('first-login-modal').classList.add('visible');
   } else {
     const taskButtons = document.getElementById('task-buttons');
     taskButtons.classList.remove('hidden');
@@ -168,7 +179,7 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
   };
   await window.utils.appendTask(accessToken, taskData);
   
-  document.getElementById('first-login-modal').classList.add('hidden');
+  closeAllModals();
   const taskButtons = document.getElementById('task-buttons');
   taskButtons.classList.remove('hidden');
   taskButtons.classList.add('visible');
@@ -207,7 +218,9 @@ document.getElementById('weekly-report-btn').onclick = async () => {
     html += `<p>Total Time This Week: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
     content.innerHTML = html;
   }
+  closeAllModals();
   document.getElementById('weekly-report-modal').classList.remove('hidden');
+  document.getElementById('weekly-report-modal').classList.add('visible');
 };
 
 // Overall Report
@@ -239,33 +252,39 @@ document.getElementById('overall-report-btn').onclick = async () => {
   });
   html += '</ul>';
   content.innerHTML = html;
+  closeAllModals();
   document.getElementById('overall-report-modal').classList.remove('hidden');
+  document.getElementById('overall-report-modal').classList.add('visible');
 };
 
 // Close Modals
 document.getElementById('weekly-report-close').onclick = () => {
-  document.getElementById('weekly-report-modal').classList.add('hidden');
+  closeAllModals();
 };
 
 document.getElementById('overall-report-close').onclick = () => {
-  document.getElementById('overall-report-modal').classList.add('hidden');
+  closeAllModals();
 };
 
 // UI Event Listeners
 document.getElementById('create-work-btn').onclick = () => {
+  closeAllModals();
   document.getElementById('create-modal').classList.remove('hidden');
+  document.getElementById('create-modal').classList.add('visible');
 };
 
 document.getElementById('report-work-btn').onclick = () => {
+  closeAllModals();
   document.getElementById('report-modal').classList.remove('hidden');
+  document.getElementById('report-modal').classList.add('visible');
 };
 
 document.getElementById('create-cancel').onclick = () => {
-  document.getElementById('create-modal').classList.add('hidden');
+  closeAllModals();
 };
 
 document.getElementById('report-cancel').onclick = () => {
-  document.getElementById('report-modal').classList.add('hidden');
+  closeAllModals();
 };
 
 document.getElementById('logout-btn').onclick = logout;
@@ -287,7 +306,7 @@ document.getElementById('create-form').onsubmit = async (e) => {
     userRole: localStorage.getItem('userRole')
   };
   await window.utils.appendTask(accessToken, taskData);
-  document.getElementById('create-modal').classList.add('hidden');
+  closeAllModals();
   document.getElementById('create-form').reset();
   initGoogleSheets();
 };
@@ -332,7 +351,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
       ]]
     })
   });
-  document.getElementById('report-modal').classList.add('hidden');
+  closeAllModals();
   document.getElementById('report-form').reset();
   initGoogleSheets();
 };

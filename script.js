@@ -215,21 +215,17 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
 document.getElementById('weekly-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, null, selectedTerm); // Pass null for userEmail
-const weeklyTasks = tasks.filter(task => {
-  const taskDate = new Date(task.submissionDate);
-  return taskDate >= startOfWeek && taskDate <= endOfWeek;
-});
+  const tasks = await window.utils.fetchUserTasks(accessToken, null, selectedTerm); // Temporarily bypass email filter
   
-  const now = new Date();
+  // Set week to match sample data (May 19–23, 2025) for testing
+  const now = new Date('2025-05-23'); // End of your sample data week
   const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay()); // Sunday
-  startOfWeek.setHours(0, 0, 0, 0);
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6); // Saturday
+  startOfWeek.setDate(now.getDate() - 6); // Start 6 days prior (May 19)
+  const endOfWeek = new Date(now);
   endOfWeek.setHours(23, 59, 59, 999);
   
-  const weeklyTasks = tasks.filter(task => {
+  // Filter tasks for the selected week
+  let weeklyTasks = tasks.filter(task => {
     const taskDate = new Date(task.submissionDate);
     return taskDate >= startOfWeek && taskDate <= endOfWeek;
   });

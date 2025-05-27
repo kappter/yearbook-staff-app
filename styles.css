@@ -110,6 +110,8 @@ button:hover {
   max-width: 500px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
+  max-height: 80vh; /* Limit modal height */
+  overflow-y: auto; /* Enable vertical scrolling */
 }
 
 .modal-content h2 {

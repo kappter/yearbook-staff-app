@@ -87,6 +87,7 @@ function initializeGoogleAuth() {
     const selectedTerm = termSelect.value;
     localStorage.setItem('selectedTerm', selectedTerm);
     initGoogleSheets();
+    updateProgressBar();
   });
 }
 
@@ -132,6 +133,7 @@ function checkFirstLogin() {
     termSelector.classList.remove('hidden');
     termSelector.classList.add('visible');
     initGoogleSheets();
+    updateProgressBar();
   }
 }
 
@@ -170,6 +172,7 @@ function initGoogleSheets() {
       option.text = task.description;
       taskSelect.appendChild(option);
     });
+    updateProgressBar();
   });
 }
 
@@ -253,11 +256,7 @@ document.getElementById('weekly-report-btn').onclick = async () => {
 document.getElementById('overall-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, null, selectedTerm); // Pass null for userEmail
-  const weeklyTasks = tasks.filter(task => {
-  const taskDate = new Date(task.submissionDate);
-  return taskDate >= startOfWeek && taskDate <= endOfWeek;
-});
+  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
   
   const periods = [
     { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
@@ -391,3 +390,20 @@ document.getElementById('report-form').onsubmit = async (e) => {
 
 // Load Google script when DOM is ready
 document.addEventListener('DOMContentLoaded', loadGoogleScript);
+
+// Progress Bar Update
+async function updateProgressBar() {
+  const userEmail = localStorage.getItem('userEmail');
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  
+  const totalRequiredMinutes = 270; // 4.5 hours = 270 minutes
+  const totalCompletedMinutes = tasks
+    .filter(task => task.status === 'Approved')
+    .reduce((sum, task) => sum + task.timeSpent, 0);
+  
+  const progressPercentage = (totalCompletedMinutes / totalRequiredMinutes) * 100;
+  const progressBar = document.getElementById('progress');
+  progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+  progressBar.textContent = `${Math.round(progressPercentage)}% (${totalCompletedMinutes} / ${totalRequiredMinutes} minutes)`;
+}

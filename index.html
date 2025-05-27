@@ -89,6 +89,21 @@
       text-align: center;
       margin: 10px 0;
     }
+    .progress-bar {
+      width: 100%;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      margin: 10px 0;
+      overflow: hidden;
+    }
+    .progress {
+      height: 20px;
+      background-color: #4CAF50;
+      text-align: right;
+      padding-right: 5px;
+      color: white;
+      transition: width 0.4s ease;
+    }
   </style>
 </head>
 <body>
@@ -98,6 +113,9 @@
   </div>
   <div class="container">
     <div id="user-info"></div>
+    <div class="progress-bar">
+      <div id="progress" class="progress">0%</div>
+    </div>
     <div id="g_id_onload"
          data-client_id="782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com"
          data-login_uri="https://kappter.github.io/yearbook-staff-app/"
@@ -256,5 +274,4 @@
   </div>
   <script src="utils.js" defer></script>
   <script src="script.js" defer></script>
-</body>
 </html>

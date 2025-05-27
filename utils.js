@@ -7,19 +7,20 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetNa
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     const rows = data.values || [];
+    console.log(`Raw rows from ${sheetName}:`, rows);
     if (userRole === 'Advisor') {
-      return rows
-        .filter(row => row[7] === 'Open')
-        .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+      const advisorFiltered = rows.filter(row => row[7] === 'Open');
+      console.log(`Advisor filtered rows from ${sheetName}:`, advisorFiltered);
+      return advisorFiltered.map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
     }
     if (userRole === 'Editor') {
-      return rows
-        .filter(row => (row[7] === 'Open' || row[7] === 'Pending') && row[2] === userTeam)
-        .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+      const editorFiltered = rows.filter(row => (row[7] === 'Open' || row[7] === 'Pending') && row[2] === userTeam);
+      console.log(`Editor filtered rows from ${sheetName}:`, editorFiltered);
+      return editorFiltered.map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
     }
-    return rows
-      .filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] === userTeam)
-      .map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+    const staffFiltered = rows.filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] === userTeam);
+    console.log(`Staff filtered rows from ${sheetName}:`, staffFiltered);
+    return staffFiltered.map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
   } catch (error) {
     console.error('Error loading tasks:', error);
     return [];

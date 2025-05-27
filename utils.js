@@ -28,15 +28,21 @@ async function fetchUserTasks(accessToken, userEmail, sheetName) {
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
+    console.log(`Fetched data from ${sheetName}:`, data); // Debug log
     const rows = data.values || [];
-    return rows
-      .filter(row => row[0] === userEmail)
-      .map(row => ({
-        description: row[4],
-        timeSpent: parseInt(row[6]) || 0,
-        status: row[7],
-        submissionDate: row[9]
-      }));
+    console.log(`Parsed rows from ${sheetName}:`, rows); // Debug log
+    let filteredTasks = rows;
+    if (userEmail) {
+      filteredTasks = rows.filter(row => row[0] === userEmail);
+    }
+    const mappedTasks = filteredTasks.map(row => ({
+      description: row[4],
+      timeSpent: parseInt(row[6]) || 0,
+      status: row[7],
+      submissionDate: row[9]
+    }));
+    console.log(`Mapped tasks from ${sheetName}:`, mappedTasks); // Debug log
+    return mappedTasks;
   } catch (error) {
     console.error('Error fetching user tasks:', error);
     return [];

@@ -1,7 +1,7 @@
 async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetName) {
   try {
     console.log('Access token for loadOpenTasks:', accessToken);
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:M`, {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -16,11 +16,24 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetNa
     if (userRole === 'Editor') {
       const editorFiltered = rows.filter(row => (row[7] === 'Open' || row[7] === 'Pending') && row[2] && row[2].toLowerCase() === userTeam.toLowerCase());
       console.log(`Editor filtered rows from ${sheetName}:`, editorFiltered);
-      return editorFiltered.map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+      return editorFiltered.map(row => ({
+        description: row[4],
+        rowIndex: rows.indexOf(row) + 2,
+        userEmail: row[0],
+        artifactLink: row[5] || '',
+        timeSpent: row[6] || 0,
+        status: row[7],
+        creationDate: row[13] || '',
+        completionDate: row[14] || ''
+      }));
     }
     const staffFiltered = rows.filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] && row[2].toLowerCase() === userTeam.toLowerCase());
     console.log(`Staff filtered rows from ${sheetName}:`, staffFiltered);
-    return staffFiltered.map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+    return staffFiltered.map(row => ({
+      description: row[4],
+      rowIndex: rows.indexOf(row) + 2,
+      creationDate: row[13] || ''
+    }));
   } catch (error) {
     console.error('Error loading tasks:', error);
     return [];
@@ -29,7 +42,7 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetNa
 
 async function fetchUserTasks(accessToken, userEmail, sheetName) {
   try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:M`, {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -45,7 +58,9 @@ async function fetchUserTasks(accessToken, userEmail, sheetName) {
       description: row[4],
       timeSpent: parseInt(row[6]) || 0,
       status: row[7],
-      submissionDate: row[9]
+      submissionDate: row[9],
+      creationDate: row[13] || '',
+      completionDate: row[14] || ''
     }));
     console.log(`Mapped tasks from ${sheetName}:`, mappedTasks);
     return mappedTasks;
@@ -57,7 +72,7 @@ async function fetchUserTasks(accessToken, userEmail, sheetName) {
 
 async function fetchTeamTasks(accessToken, userTeam, sheetName) {
   try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:M`, {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -67,9 +82,12 @@ async function fetchTeamTasks(accessToken, userTeam, sheetName) {
     return teamTasks.map(row => ({
       userEmail: row[0],
       description: row[4],
+      artifactLink: row[5] || '',
       timeSpent: parseInt(row[6]) || 0,
       status: row[7],
-      submissionDate: row[9]
+      submissionDate: row[9],
+      creationDate: row[13] || '',
+      completionDate: row[14] || ''
     }));
   } catch (error) {
     console.error('Error fetching team tasks:', error);
@@ -79,7 +97,7 @@ async function fetchTeamTasks(accessToken, userTeam, sheetName) {
 
 async function fetchAllTasks(accessToken, sheetName) {
   try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:M`, {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -91,7 +109,9 @@ async function fetchAllTasks(accessToken, sheetName) {
       description: row[4],
       timeSpent: parseInt(row[6]) || 0,
       status: row[7],
-      submissionDate: row[9]
+      submissionDate: row[9],
+      creationDate: row[13] || '',
+      completionDate: row[14] || ''
     }));
   } catch (error) {
     console.error('Error fetching all tasks:', error);
@@ -117,7 +137,29 @@ async function appendTask(accessToken, taskData, sheetName) {
         new Date().toISOString(),
         taskData.editorEmail || '',
         taskData.userTeam || '',
-        taskData.userRole || ''
+        taskData.userRole || '',
+        taskData.creationDate || new Date().toISOString(),
+        taskData.completionDate || ''
+      ]]
+    })
+  });
+  return response.json();
+}
+
+async function updateTaskStatus(accessToken, sheetName, rowIndex, status, editorEmail) {
+  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      values: [[
+        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
+        status,
+        undefined, undefined,
+        editorEmail,
+        undefined, undefined, undefined, undefined
       ]]
     })
   });
@@ -125,5 +167,5 @@ async function appendTask(accessToken, taskData, sheetName) {
 }
 
 if (typeof module === 'undefined') {
-  window.utils = { loadOpenTasks, fetchUserTasks, fetchTeamTasks, fetchAllTasks, appendTask };
+  window.utils = { loadOpenTasks, fetchUserTasks, fetchTeamTasks, fetchAllTasks, appendTask, updateTaskStatus };
 }

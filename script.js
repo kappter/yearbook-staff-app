@@ -477,7 +477,8 @@ async function updateDashboard() {
             console.log('Approving task at row:', rowIndex, 'in sheet:', term);
             try {
               await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
-              updateDashboard(); // Refresh dashboard after successful update
+              // Delay dashboard refresh to allow UI update to stabilize
+              setTimeout(() => updateDashboard(), 500);
             } catch (error) {
               console.error('Error approving task:', error);
             }

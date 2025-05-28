@@ -1,171 +1,229 @@
-async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetName) {
-  try {
+window.utils = {
+  loadOpenTasks: async (accessToken, userEmail, userTeam, userRole, sheetName) => {
     console.log('Access token for loadOpenTasks:', accessToken);
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    const rows = data.values || [];
-    console.log(`Raw rows from ${sheetName}:`, rows);
-    if (userRole === 'Advisor' || userRole === 'Chief Editor') {
-      const advisorFiltered = rows.filter(row => row[7] === 'Open');
-      console.log(`Advisor/Chief Editor filtered rows from ${sheetName}:`, advisorFiltered);
-      return advisorFiltered.map(row => ({ description: row[4], rowIndex: rows.indexOf(row) + 2 }));
+    try {
+      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O1050`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await response.json();
+      console.log(`Raw rows from ${sheetName}:`, data.values);
+
+      let tasks = [];
+      if (userRole === 'Editor') {
+        tasks = data.values
+          .filter((row, index) => row[11] === userTeam && row[7] === 'Open')
+          .map((row, index) => ({
+            rowIndex: index + 2,
+            userEmail: row[0],
+            userName: row[1],
+            team: row[2],
+            taskType: row[3],
+            description: row[4],
+            artifactLink: row[5] || '',
+            timeSpent: parseFloat(row[6]) || 0,
+            status: row[7],
+            editorNotes: row[8] || '',
+            submissionDate: row[9] || '',
+            editorEmail: row[10] || '',
+            userTeam: row[11] || '',
+            userRole: row[12] || '',
+            creationDate: row[13] || '',
+            completionDate: row[14] || ''
+          }));
+        console.log(`Editor filtered rows from ${sheetName}:`, tasks);
+      } else if (userRole === 'Staff') {
+        tasks = data.values
+          .filter((row, index) => row[0] === userEmail && row[7] === 'Open')
+          .map((row, index) => ({
+            rowIndex: index + 2,
+            userEmail: row[0],
+            userName: row[1],
+            team: row[2],
+            taskType: row[3],
+            description: row[4],
+            artifactLink: row[5] || '',
+            timeSpent: parseFloat(row[6]) || 0,
+            status: row[7],
+            editorNotes: row[8] || '',
+            submissionDate: row[9] || '',
+            editorEmail: row[10] || '',
+            userTeam: row[11] || '',
+            userRole: row[12] || '',
+            creationDate: row[13] || '',
+            completionDate: row[14] || ''
+          }));
+        console.log(`Staff filtered rows from ${sheetName}:`, tasks);
+      }
+      return tasks;
+    } catch (error) {
+      console.error('Error in loadOpenTasks:', error);
+      return [];
     }
-    if (userRole === 'Editor') {
-      const editorFiltered = rows.filter(row => (row[7] === 'Open' || row[7] === 'Pending') && row[2] && row[2].toLowerCase() === userTeam.toLowerCase());
-      console.log(`Editor filtered rows from ${sheetName}:`, editorFiltered);
-      return editorFiltered.map(row => ({
-        description: row[4],
-        rowIndex: rows.indexOf(row) + 2,
+  },
+
+  fetchUserTasks: async (accessToken, userEmail, sheetName) => {
+    try {
+      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O1050`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await response.json();
+      console.log('Fetched data from', sheetName, ':', data);
+      console.log('Parsed rows from', sheetName, ':', data.values);
+      const tasks = data.values
+        .filter(row => row[0] === userEmail)
+        .map((row, index) => ({
+          rowIndex: index + 2,
+          userEmail: row[0],
+          userName: row[1],
+          team: row[2],
+          taskType: row[3],
+          description: row[4],
+          artifactLink: row[5] || '',
+          timeSpent: parseFloat(row[6]) || 0,
+          status: row[7],
+          editorNotes: row[8] || '',
+          submissionDate: row[9] || '',
+          editorEmail: row[10] || '',
+          userTeam: row[11] || '',
+          userRole: row[12] || '',
+          creationDate: row[13] || '',
+          completionDate: row[14] || ''
+        }));
+      console.log('Mapped tasks from', sheetName, ':', tasks);
+      return tasks;
+    } catch (error) {
+      console.error('Error in fetchUserTasks:', error);
+      return [];
+    }
+  },
+
+  fetchTeamTasks: async (accessToken, userTeam, sheetName) => {
+    try {
+      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O1050`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await response.json();
+      const tasks = data.values
+        .filter(row => row[11] === userTeam)
+        .map((row, index) => ({
+          rowIndex: index + 2,
+          userEmail: row[0],
+          userName: row[1],
+          team: row[2],
+          taskType: row[3],
+          description: row[4],
+          artifactLink: row[5] || '',
+          timeSpent: parseFloat(row[6]) || 0,
+          status: row[7],
+          editorNotes: row[8] || '',
+          submissionDate: row[9] || '',
+          editorEmail: row[10] || '',
+          userTeam: row[11] || '',
+          userRole: row[12] || '',
+          creationDate: row[13] || '',
+          completionDate: row[14] || ''
+        }));
+      return tasks;
+    } catch (error) {
+      console.error('Error in fetchTeamTasks:', error);
+      return [];
+    }
+  },
+
+  fetchAllTasks: async (accessToken, sheetName) => {
+    try {
+      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O1050`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const data = await response.json();
+      const tasks = data.values.map((row, index) => ({
+        rowIndex: index + 2,
         userEmail: row[0],
+        userName: row[1],
+        team: row[2],
+        taskType: row[3],
+        description: row[4],
         artifactLink: row[5] || '',
-        timeSpent: row[6] || 0,
+        timeSpent: parseFloat(row[6]) || 0,
         status: row[7],
+        editorNotes: row[8] || '',
+        submissionDate: row[9] || '',
+        editorEmail: row[10] || '',
+        userTeam: row[11] || '',
+        userRole: row[12] || '',
         creationDate: row[13] || '',
         completionDate: row[14] || ''
       }));
+      return tasks;
+    } catch (error) {
+      console.error('Error in fetchAllTasks:', error);
+      return [];
     }
-    const staffFiltered = rows.filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] && row[2].toLowerCase() === userTeam.toLowerCase());
-    console.log(`Staff filtered rows from ${sheetName}:`, staffFiltered);
-    return staffFiltered.map(row => ({
-      description: row[4],
-      rowIndex: rows.indexOf(row) + 2,
-      creationDate: row[13] || ''
-    }));
-  } catch (error) {
-    console.error('Error loading tasks:', error);
-    return [];
-  }
-}
+  },
 
-async function fetchUserTasks(accessToken, userEmail, sheetName) {
-  try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    console.log(`Fetched data from ${sheetName}:`, data);
-    const rows = data.values || [];
-    console.log(`Parsed rows from ${sheetName}:`, rows);
-    let filteredTasks = rows;
-    if (userEmail) {
-      filteredTasks = rows.filter(row => row[0] === userEmail);
+  appendTask: async (accessToken, taskData, sheetName) => {
+    try {
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A1:O1:append?valueInputOption=RAW`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          values: [[
+            taskData.userEmail,
+            taskData.userName,
+            taskData.team,
+            taskData.taskType,
+            taskData.description,
+            taskData.artifactLink,
+            taskData.timeSpent,
+            taskData.status,
+            taskData.editorNotes,
+            new Date().toISOString(),
+            taskData.editorEmail,
+            taskData.userTeam,
+            taskData.userRole,
+            taskData.creationDate,
+            taskData.completionDate
+          ]]
+        })
+      });
+    } catch (error) {
+      console.error('Error in appendTask:', error);
     }
-    const mappedTasks = filteredTasks.map(row => ({
-      description: row[4],
-      timeSpent: parseInt(row[6]) || 0,
-      status: row[7],
-      submissionDate: row[9],
-      creationDate: row[13] || '',
-      completionDate: row[14] || ''
-    }));
-    console.log(`Mapped tasks from ${sheetName}:`, mappedTasks);
-    return mappedTasks;
-  } catch (error) {
-    console.error('Error fetching user tasks:', error);
-    return [];
+  },
+
+  updateTaskStatus: async (accessToken, sheetName, rowIndex, status, editorEmail) => {
+    try {
+      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          values: [[
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            status,
+            undefined,
+            new Date().toISOString(),
+            editorEmail,
+            undefined,
+            undefined,
+            undefined,
+            undefined
+          ]]
+        })
+      });
+    } catch (error) {
+      console.error('Error in updateTaskStatus:', error);
+    }
   }
-}
-
-async function fetchTeamTasks(accessToken, userTeam, sheetName) {
-  try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    const rows = data.values || [];
-    const teamTasks = rows.filter(row => row[2] && row[2].toLowerCase() === userTeam.toLowerCase());
-    return teamTasks.map(row => ({
-      userEmail: row[0],
-      description: row[4],
-      artifactLink: row[5] || '',
-      timeSpent: parseInt(row[6]) || 0,
-      status: row[7],
-      submissionDate: row[9],
-      creationDate: row[13] || '',
-      completionDate: row[14] || ''
-    }));
-  } catch (error) {
-    console.error('Error fetching team tasks:', error);
-    return [];
-  }
-}
-
-async function fetchAllTasks(accessToken, sheetName) {
-  try {
-    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-    const data = await response.json();
-    const rows = data.values || [];
-    return rows.map(row => ({
-      userEmail: row[0],
-      team: row[2],
-      description: row[4],
-      timeSpent: parseInt(row[6]) || 0,
-      status: row[7],
-      submissionDate: row[9],
-      creationDate: row[13] || '',
-      completionDate: row[14] || ''
-    }));
-  } catch (error) {
-    console.error('Error fetching all tasks:', error);
-    return [];
-  }
-}
-
-async function appendTask(accessToken, taskData, sheetName) {
-  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      values: [[
-        taskData.userEmail,
-        taskData.userName,
-        taskData.team,
-        taskData.taskType,
-        taskData.description,
-        taskData.artifactLink || '',
-        taskData.timeSpent || '',
-        taskData.status,
-        taskData.editorNotes || '',
-        new Date().toISOString(),
-        taskData.editorEmail || '',
-        taskData.userTeam || '',
-        taskData.userRole || '',
-        taskData.creationDate || new Date().toISOString(),
-        taskData.completionDate || ''
-      ]]
-    })
-  });
-  return response.json();
-}
-
-async function updateTaskStatus(accessToken, sheetName, rowIndex, status, editorEmail) {
-  const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      values: [[
-        undefined, undefined, undefined, undefined, undefined, undefined, undefined,
-        status,
-        undefined, undefined,
-        editorEmail,
-        undefined, undefined, undefined, undefined
-      ]]
-    })
-  });
-  return response.json();
-}
-
-if (typeof module === 'undefined') {
-  window.utils = { loadOpenTasks, fetchUserTasks, fetchTeamTasks, fetchAllTasks, appendTask, updateTaskStatus };
-}
+};

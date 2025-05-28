@@ -15,7 +15,6 @@ function loadGoogleScript() {
   document.head.appendChild(script);
 }
 
-// Helper function to close all modals
 function closeAllModals() {
   const modals = document.querySelectorAll('.modal');
   modals.forEach(modal => {
@@ -66,7 +65,6 @@ function initializeGoogleAuth() {
     tokenClient.requestAccessToken();
   };
 
-  // Theme Toggle Logic
   const themeToggle = document.getElementById('theme-toggle');
   const currentTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', currentTheme);
@@ -79,7 +77,6 @@ function initializeGoogleAuth() {
     themeToggle.textContent = newTheme === 'light' ? 'Dark Mode' : 'Light Mode';
   });
 
-  // Term Selector Logic
   const termSelect = document.getElementById('term-select');
   const savedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   termSelect.value = savedTerm;
@@ -87,7 +84,7 @@ function initializeGoogleAuth() {
     const selectedTerm = termSelect.value;
     localStorage.setItem('selectedTerm', selectedTerm);
     initGoogleSheets();
-    updateProgressBar();
+    updateDashboard();
   });
 }
 
@@ -123,8 +120,30 @@ function checkFirstLogin() {
   const userRole = localStorage.getItem('userRole');
   if (!userTeam || !userRole) {
     closeAllModals();
-    document.getElementById('first-login-modal').classList.remove('hidden');
-    document.getElementById('first-login-modal').classList.add('visible');
+    const firstLoginModal = document.getElementById('first-login-modal');
+    const roleSelection = document.getElementById('role-selection');
+    const userTeamSelect = document.getElementById('user-team');
+
+    userTeamSelect.addEventListener('change', () => {
+      if (userTeamSelect.value === 'Leadership') {
+        roleSelection.classList.remove('hidden');
+        document.getElementById('user-role').innerHTML = `
+          <option value="">Select a role</option>
+          <option value="Chief Editor">Chief Editor</option>
+          <option value="Advisor">Advisor</option>
+        `;
+      } else {
+        roleSelection.classList.remove('hidden');
+        document.getElementById('user-role').innerHTML = `
+          <option value="">Select a role</option>
+          <option value="Staff">Staff</option>
+          <option value="Editor">Editor</option>
+        `;
+      }
+    });
+
+    firstLoginModal.classList.remove('hidden');
+    firstLoginModal.classList.add('visible');
   } else {
     const taskButtons = document.getElementById('task-buttons');
     taskButtons.classList.remove('hidden');
@@ -133,7 +152,7 @@ function checkFirstLogin() {
     termSelector.classList.remove('hidden');
     termSelector.classList.add('visible');
     initGoogleSheets();
-    updateProgressBar();
+    updateDashboard();
   }
 }
 
@@ -155,6 +174,8 @@ function logout() {
   const termSelector = document.getElementById('term-selector');
   termSelector.classList.add('hidden');
   termSelector.classList.remove('visible');
+  const pendingRequests = document.getElementById('pending-requests');
+  pendingRequests.classList.add('hidden');
 }
 
 function initGoogleSheets() {
@@ -172,11 +193,10 @@ function initGoogleSheets() {
       option.text = task.description;
       taskSelect.appendChild(option);
     });
-    updateProgressBar();
+    updateDashboard();
   });
 }
 
-// First Login Form Submission (Always write to Sheet1)
 document.getElementById('first-login-form').onsubmit = async (e) => {
   e.preventDefault();
   const userTeam = document.getElementById('user-team').value;
@@ -214,25 +234,32 @@ document.getElementById('first-login-form').onsubmit = async (e) => {
   initGoogleSheets();
 };
 
-// Weekly Report
 document.getElementById('weekly-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  const userTeam = localStorage.getItem('userTeam');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, null, selectedTerm); // Temporarily bypass email filter
-  
-  // Set week to match sample data (May 19–23, 2025) for testing
-  const now = new Date('2025-05-23'); // End of your sample data week
+  let tasks;
+  if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+    tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+  } else if (userRole === 'Editor') {
+    tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+  } else {
+    tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  }
+
+  const now = new Date();
   const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - 6); // Start 6 days prior (May 19)
-  const endOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
-  
-  // Filter tasks for the selected week
+
   let weeklyTasks = tasks.filter(task => {
     const taskDate = new Date(task.submissionDate);
     return taskDate >= startOfWeek && taskDate <= endOfWeek;
   });
-  
+
   const content = document.getElementById('weekly-report-content');
   if (weeklyTasks.length === 0) {
     content.innerHTML = `<p>No tasks completed this week in ${selectedTerm}.</p>`;
@@ -252,12 +279,20 @@ document.getElementById('weekly-report-btn').onclick = async () => {
   document.getElementById('weekly-report-modal').classList.add('visible');
 };
 
-// Overall Report
 document.getElementById('overall-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  const userTeam = localStorage.getItem('userTeam');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
-  
+  let tasks;
+  if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+    tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+  } else if (userRole === 'Editor') {
+    tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+  } else {
+    tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  }
+
   const periods = [
     { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
     { name: '2026 Term 1', start: new Date('2025-09-01'), end: new Date('2025-11-30') },
@@ -265,7 +300,7 @@ document.getElementById('overall-report-btn').onclick = async () => {
     { name: '2026 Term 3', start: new Date('2026-03-01'), end: new Date('2026-05-31') },
     { name: 'Post Publication', start: new Date('2026-06-01'), end: new Date('2026-08-31') }
   ];
-  
+
   const report = periods.map(period => {
     const periodTasks = tasks.filter(task => {
       const taskDate = new Date(task.submissionDate);
@@ -274,7 +309,7 @@ document.getElementById('overall-report-btn').onclick = async () => {
     const totalTime = periodTasks.reduce((sum, task) => sum + task.timeSpent, 0);
     return { period: period.name, totalTime };
   });
-  
+
   const content = document.getElementById('overall-report-content');
   let html = `<p>Overall Report for ${selectedTerm}</p><ul>`;
   report.forEach(r => {
@@ -287,7 +322,6 @@ document.getElementById('overall-report-btn').onclick = async () => {
   document.getElementById('overall-report-modal').classList.add('visible');
 };
 
-// Close Modals
 document.getElementById('weekly-report-close').onclick = () => {
   closeAllModals();
 };
@@ -296,7 +330,6 @@ document.getElementById('overall-report-close').onclick = () => {
   closeAllModals();
 };
 
-// UI Event Listeners
 document.getElementById('create-work-btn').onclick = () => {
   closeAllModals();
   document.getElementById('create-modal').classList.remove('hidden');
@@ -388,22 +421,62 @@ document.getElementById('report-form').onsubmit = async (e) => {
   initGoogleSheets();
 };
 
-// Load Google script when DOM is ready
-document.addEventListener('DOMContentLoaded', loadGoogleScript);
-
-// Progress Bar Update
-async function updateProgressBar() {
+async function updateDashboard() {
   const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  const userTeam = localStorage.getItem('userTeam');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
-  
-  const totalRequiredMinutes = 270; // 4.5 hours = 270 minutes
-  const totalCompletedMinutes = tasks
-    .filter(task => task.status === 'Approved')
-    .reduce((sum, task) => sum + task.timeSpent, 0);
-  
-  const progressPercentage = (totalCompletedMinutes / totalRequiredMinutes) * 100;
-  const progressBar = document.getElementById('progress');
-  progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-  progressBar.textContent = `${Math.round(progressPercentage)}% (${totalCompletedMinutes} / ${totalRequiredMinutes} minutes)`;
+  const pendingRequestsDiv = document.getElementById('pending-requests');
+  const pendingContent = document.getElementById('pending-requests-content');
+
+  if (userRole === 'Editor') {
+    const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+    const pendingTasks = teamTasks.filter(task => task.status === 'Pending');
+    pendingRequestsDiv.classList.remove('hidden');
+    if (pendingTasks.length === 0) {
+      pendingContent.innerHTML = '<p>No pending requests for your team.</p>';
+    } else {
+      let html = '<ul>';
+      pendingTasks.forEach(task => {
+        html += `<li>${task.userEmail}: ${task.description} (${task.timeSpent} minutes)</li>`;
+      });
+      html += '</ul>';
+      pendingContent.innerHTML = html;
+    }
+
+    const teamMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
+    const totalRequiredMinutes = teamMembers * 270; // 4.5 hours per member
+    const totalApprovedMinutes = teamTasks
+      .filter(task => task.status === 'Approved')
+      .reduce((sum, task) => sum + task.timeSpent, 0);
+    const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
+    const progressBar = document.getElementById('progress');
+    progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalApprovedMinutes} / ${totalRequiredMinutes} minutes)`;
+  } else if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+    const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+    const totalMembers = [...new Set(allTasks.map(task => task.userEmail))].length;
+    const totalRequiredMinutes = totalMembers * 270;
+    const totalApprovedMinutes = allTasks
+      .filter(task => task.status === 'Approved')
+      .reduce((sum, task) => sum + task.timeSpent, 0);
+    const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
+    const progressBar = document.getElementById('progress');
+    progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalApprovedMinutes} / ${totalRequiredMinutes} minutes)`;
+    pendingRequestsDiv.classList.add('hidden');
+  } else {
+    const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+    const totalRequiredMinutes = 270;
+    const totalCompletedMinutes = tasks
+      .filter(task => task.status === 'Approved')
+      .reduce((sum, task) => sum + task.timeSpent, 0);
+    const progressPercentage = (totalCompletedMinutes / totalRequiredMinutes) * 100;
+    const progressBar = document.getElementById('progress');
+    progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalCompletedMinutes} / ${totalRequiredMinutes} minutes)`;
+    pendingRequestsDiv.classList.add('hidden');
+  }
 }
+
+document.addEventListener('DOMContentLoaded', loadGoogleScript);

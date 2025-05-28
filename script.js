@@ -476,11 +476,16 @@ async function updateDashboard() {
             const term = e.target.getAttribute('data-term');
             console.log('Approving task at row:', rowIndex, 'in sheet:', term);
             try {
+              // Disable checkbox to prevent multiple clicks
+              e.target.disabled = true;
               await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
-              // Delay dashboard refresh to allow UI update to stabilize
-              setTimeout(() => updateDashboard(), 500);
+              // Refresh dashboard after successful update
+              updateDashboard();
             } catch (error) {
               console.error('Error approving task:', error);
+              // Re-enable checkbox on error
+              e.target.disabled = false;
+              e.target.checked = false; // Reset checkbox state on failure
             }
           }
         });

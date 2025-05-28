@@ -292,4 +292,218 @@ document.getElementById('overall-report-btn').onclick = async () => {
   } else if (userRole === 'Editor') {
     tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
   } else {
-    tasks = await window.utils.fetchUserTasks(accessToken,
+    tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  }
+
+  const periods = [
+    { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
+    { name: '2026 Term 1', start: new Date('2025-09-01'), end: new Date('2025-11-30') },
+    { name: '2026 Term 2', start: new Date('2025-12-01'), end: new Date('2026-02-28') },
+    { name: '2026 Term 3', start: new Date('2026-03-01'), end: new Date('2026-05-31') },
+    { name: 'Post Publication', start: new Date('2026-06-01'), end: new Date('2026-08-31') }
+  ];
+
+  const report = periods.map(period => {
+    const periodTasks = tasks.filter(task => {
+      const taskDate = new Date(task.submissionDate);
+      return taskDate >= period.start && taskDate <= period.end && task.status === 'Approved';
+    });
+    const totalTime = periodTasks.reduce((sum, task) => sum + task.timeSpent, 0);
+    return { period: period.name, totalTime };
+  });
+
+  const content = document.getElementById('overall-report-content');
+  let html = `<p>Overall Report for ${selectedTerm}</p><ul>`;
+  report.forEach(r => {
+    html += `<li>${r.period}: ${r.totalTime} minutes (${(r.totalTime / 60).toFixed(1)} hours)</li>`;
+  });
+  html += '</ul>';
+  content.innerHTML = html;
+  closeAllModals();
+  document.getElementById('overall-report-modal').classList.remove('hidden');
+  document.getElementById('overall-report-modal').classList.add('visible');
+};
+
+document.getElementById('weekly-report-close').onclick = () => {
+  closeAllModals();
+};
+
+document.getElementById('overall-report-close').onclick = () => {
+  closeAllModals();
+};
+
+document.getElementById('create-work-btn').onclick = () => {
+  closeAllModals();
+  document.getElementById('create-modal').classList.remove('hidden');
+  document.getElementById('create-modal').classList.add('visible');
+};
+
+document.getElementById('report-work-btn').onclick = () => {
+  closeAllModals();
+  document.getElementById('report-modal').classList.remove('hidden');
+  document.getElementById('report-modal').classList.add('visible');
+};
+
+document.getElementById('create-cancel').onclick = () => {
+  closeAllModals();
+};
+
+document.getElementById('report-cancel').onclick = () => {
+  closeAllModals();
+};
+
+document.getElementById('logout-btn').onclick = logout;
+
+document.getElementById('create-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  const taskData = {
+    userEmail: localStorage.getItem('userEmail'),
+    userName: localStorage.getItem('userName'),
+    team: document.getElementById('team').value,
+    taskType: document.getElementById('task-type').value,
+    description: document.getElementById('description').value,
+    timeSpent: document.getElementById('estimated-time').value,
+    status: 'Open',
+    artifactLink: '',
+    editorNotes: '',
+    editorEmail: '',
+    userTeam: localStorage.getItem('userTeam'),
+    userRole: localStorage.getItem('userRole'),
+    creationDate: new Date().toISOString(),
+    completionDate: ''
+  };
+  await window.utils.appendTask(accessToken, taskData, selectedTerm);
+  closeAllModals();
+  document.getElementById('create-form').reset();
+  initGoogleSheets();
+};
+
+document.getElementById('report-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  const rowIndex = document.getElementById('task-select').value;
+  if (!rowIndex) return;
+  const taskData = {
+    userEmail: localStorage.getItem('userEmail'),
+    userName: localStorage.getItem('userName'),
+    team: '',
+    taskType: '',
+    description: openTasks.find(task => task.rowIndex == rowIndex).description,
+    artifactLink: document.getElementById('artifact-link').value,
+    timeSpent: document.getElementById('actual-time').value,
+    status: 'Pending',
+    editorNotes: '',
+    editorEmail: '',
+    completionDate: new Date().toISOString()
+  };
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${selectedTerm}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      values: [[
+        taskData.userEmail,
+        taskData.userName,
+        taskData.team,
+        taskData.taskType,
+        taskData.description,
+        taskData.artifactLink,
+        taskData.timeSpent,
+        taskData.status,
+        taskData.editorNotes,
+        new Date().toISOString(),
+        taskData.editorEmail,
+        localStorage.getItem('userTeam'),
+        localStorage.getItem('userRole'),
+        undefined,
+        taskData.completionDate
+      ]]
+    })
+  });
+  closeAllModals();
+  document.getElementById('report-form').reset();
+  initGoogleSheets();
+};
+
+async function updateDashboard() {
+  const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  const userTeam = localStorage.getItem('userTeam');
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  const pendingRequestsDiv = document.getElementById('pending-requests');
+  const pendingContent = document.getElementById('pending-requests-content');
+
+  if (userRole === 'Editor') {
+    const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+    const pendingTasks = teamTasks.filter(task => task.status === 'Pending');
+    pendingRequestsDiv.classList.remove('hidden');
+    if (pendingTasks.length === 0) {
+      pendingContent.innerHTML = '<p>No pending requests for your team.</p>';
+    } else {
+      let html = '<ul>';
+      pendingTasks.forEach(task => {
+        const creationDate = task.creationDate ? new Date(task.creationDate).toLocaleString() : 'N/A';
+        const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : 'N/A';
+        html += `
+          <li>
+            <input type="checkbox" class="approve-task" data-row="${task.rowIndex}" data-term="${selectedTerm}">
+            ${task.userEmail}: ${task.description} (${task.timeSpent} minutes)<br>
+            Created: ${creationDate}<br>
+            Completed: ${completionDate}<br>
+            Artifact: <a href="${task.artifactLink}" target="_blank">${task.artifactLink || 'N/A'}</a>
+          </li>`;
+      });
+      html += '</ul>';
+      pendingContent.innerHTML = html;
+
+      document.querySelectorAll('.approve-task').forEach(checkbox => {
+        checkbox.addEventListener('change', async (e) => {
+          if (e.target.checked) {
+            const rowIndex = e.target.getAttribute('data-row');
+            const term = e.target.getAttribute('data-term');
+            await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
+            updateDashboard();
+          }
+        });
+      });
+    }
+
+    const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
+    const totalRequiredMinutes = totalMembers * 270;
+    const totalApprovedMinutes = teamTasks
+      .filter(task => task.status === 'Approved')
+      .reduce((sum, task) => sum + task.timeSpent, 0);
+    const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
+    const progressBar = document.getElementById('progress');
+    progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalApprovedMinutes} / ${totalRequiredMinutes} minutes)`;
+  } else if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+    const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+    const totalMembers = [...new Set(allTasks.map(task => task.userEmail))].length;
+    const totalRequiredMinutes = totalMembers * 270;
+    const totalApprovedMinutes = allTasks
+      .filter(task => task.status === 'Approved')
+      .reduce((sum, task) => sum + task.timeSpent, 0);
+    const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
+    const progressBar = document.getElementById('progress');
+    progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalApprovedMinutes} / ${totalRequiredMinutes} minutes)`;
+    pendingRequestsDiv.classList.add('hidden');
+  } else {
+    const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+    const totalRequiredMinutes = 270;
+    const totalCompletedMinutes = tasks
+      .filter(task => task.status === 'Approved')
+      .reduce((sum, task) => sum + task.timeSpent, 0);
+    const progressPercentage = (totalCompletedMinutes / totalRequiredMinutes) * 100;
+    const progressBar = document.getElementById('progress');
+    progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalCompletedMinutes} / ${totalRequiredMinutes} minutes)`;
+    pendingRequestsDiv.classList.add('hidden');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadGoogleScript);

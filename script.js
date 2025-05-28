@@ -193,3 +193,103 @@ function initGoogleSheets() {
       option.text = task.description;
       taskSelect.appendChild(option);
     });
+    updateDashboard();
+  });
+}
+
+document.getElementById('first-login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const userTeam = document.getElementById('user-team').value;
+  const userRole = document.getElementById('user-role').value;
+  if (!userTeam || !userRole) {
+    alert('Please select both a team and a role.');
+    return;
+  }
+  localStorage.setItem('userTeam', userTeam);
+  localStorage.setItem('userRole', userRole);
+  
+  const taskData = {
+    userEmail: localStorage.getItem('userEmail'),
+    userName: localStorage.getItem('userName'),
+    team: userTeam,
+    taskType: 'Profile Setup',
+    description: `User assigned to ${userTeam} as ${userRole}`,
+    timeSpent: '0',
+    status: 'Completed',
+    artifactLink: '',
+    editorNotes: '',
+    editorEmail: '',
+    userTeam: userTeam,
+    userRole: userRole,
+    creationDate: new Date().toISOString(),
+    completionDate: ''
+  };
+  await window.utils.appendTask(accessToken, taskData, 'Sheet1');
+  
+  closeAllModals();
+  const taskButtons = document.getElementById('task-buttons');
+  taskButtons.classList.remove('hidden');
+  taskButtons.classList.add('visible');
+  const termSelector = document.getElementById('term-selector');
+  termSelector.classList.remove('hidden');
+  termSelector.classList.add('visible');
+  initGoogleSheets();
+};
+
+document.getElementById('weekly-report-btn').onclick = async () => {
+  const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  const userTeam = localStorage.getItem('userTeam');
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  let tasks;
+  if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+    tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+  } else if (userRole === 'Editor') {
+    tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+  } else {
+    tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  }
+
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  let weeklyTasks = tasks.filter(task => {
+    const taskDate = new Date(task.submissionDate);
+    return taskDate >= startOfWeek && taskDate <= endOfWeek;
+  });
+
+  const content = document.getElementById('weekly-report-content');
+  if (weeklyTasks.length === 0) {
+    content.innerHTML = `<p>No tasks completed this week in ${selectedTerm}.</p>`;
+  } else {
+    let totalTime = 0;
+    let html = '<ul>';
+    weeklyTasks.forEach(task => {
+      html += `<li>${task.description} (${task.timeSpent} minutes, ${task.status})</li>`;
+      totalTime += task.timeSpent;
+    });
+    html += '</ul>';
+    html += `<p>Total Time This Week in ${selectedTerm}: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
+    content.innerHTML = html;
+  }
+  closeAllModals();
+  document.getElementById('weekly-report-modal').classList.remove('hidden');
+  document.getElementById('weekly-report-modal').classList.add('visible');
+};
+
+document.getElementById('overall-report-btn').onclick = async () => {
+  const userEmail = localStorage.getItem('userEmail');
+  const userRole = localStorage.getItem('userRole');
+  const userTeam = localStorage.getItem('userTeam');
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  let tasks;
+  if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+    tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+  } else if (userRole === 'Editor') {
+    tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+  } else {
+    tasks = await window.utils.fetchUserTasks(accessToken,

@@ -196,7 +196,7 @@ window.utils = {
 
   updateTaskStatus: async (accessToken, sheetName, rowIndex, status, editorEmail) => {
     try {
-      await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
+      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -222,8 +222,12 @@ window.utils = {
           ]]
         })
       });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
     } catch (error) {
       console.error('Error in updateTaskStatus:', error);
+      throw error; // Re-throw to be caught by the caller
     }
   }
 };

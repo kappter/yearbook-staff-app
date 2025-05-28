@@ -463,21 +463,31 @@ async function updateDashboard() {
       html += '</ul>';
       pendingContent.innerHTML = html;
 
+      // Remove existing event listeners to prevent duplication
+      document.querySelectorAll('.approve-task').forEach(checkbox => {
+        const newCheckbox = checkbox.cloneNode(true);
+        checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+      });
+
       document.querySelectorAll('.approve-task').forEach(checkbox => {
         checkbox.addEventListener('change', async (e) => {
           if (e.target.checked) {
             const rowIndex = e.target.getAttribute('data-row');
             const term = e.target.getAttribute('data-term');
             console.log('Approving task at row:', rowIndex, 'in sheet:', term);
-            await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
-            updateDashboard();
+            try {
+              await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
+              updateDashboard(); // Refresh dashboard after successful update
+            } catch (error) {
+              console.error('Error approving task:', error);
+            }
           }
         });
       });
     }
 
     const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
-    const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1; // Prevent division by zero
+    const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
     const totalApprovedMinutes = teamTasks
       .filter(task => task.status === 'Approved')
       .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
@@ -485,12 +495,12 @@ async function updateDashboard() {
     const progressBar = document.getElementById('progress');
     progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
     const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
-    const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes; // Default to 1 if NaN
+    const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes;
     progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
   } else if (userRole === 'Advisor' || userRole === 'Chief Editor') {
     const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
     const totalMembers = [...new Set(allTasks.map(task => task.userEmail))].length;
-    const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1; // Prevent division by zero
+    const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
     const totalApprovedMinutes = allTasks
       .filter(task => task.status === 'Approved')
       .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);

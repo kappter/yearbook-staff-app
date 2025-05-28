@@ -477,7 +477,7 @@ async function updateDashboard() {
     }
 
     const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
-    const totalRequiredMinutes = totalMembers * 270;
+    const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1; // Prevent division by zero
     const totalApprovedMinutes = teamTasks
       .filter(task => task.status === 'Approved')
       .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
@@ -485,12 +485,12 @@ async function updateDashboard() {
     const progressBar = document.getElementById('progress');
     progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
     const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
-    const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 0 : totalRequiredMinutes;
+    const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes; // Default to 1 if NaN
     progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
   } else if (userRole === 'Advisor' || userRole === 'Chief Editor') {
     const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
     const totalMembers = [...new Set(allTasks.map(task => task.userEmail))].length;
-    const totalRequiredMinutes = totalMembers * 270;
+    const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1; // Prevent division by zero
     const totalApprovedMinutes = allTasks
       .filter(task => task.status === 'Approved')
       .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
@@ -498,7 +498,7 @@ async function updateDashboard() {
     const progressBar = document.getElementById('progress');
     progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
     const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
-    const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 0 : totalRequiredMinutes;
+    const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes;
     progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
     pendingRequestsDiv.classList.add('hidden');
   } else {

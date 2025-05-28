@@ -373,6 +373,7 @@ document.getElementById('create-form').onsubmit = async (e) => {
     creationDate: new Date().toISOString(),
     completionDate: ''
   };
+  console.log('Creating task:', taskData);
   await window.utils.appendTask(accessToken, taskData, selectedTerm);
   closeAllModals();
   document.getElementById('create-form').reset();
@@ -397,6 +398,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
     editorEmail: '',
     completionDate: new Date().toISOString()
   };
+  console.log('Reporting task:', taskData);
   await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${selectedTerm}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
     method: 'PUT',
     headers: {
@@ -464,6 +466,7 @@ async function updateDashboard() {
           if (e.target.checked) {
             const rowIndex = e.target.getAttribute('data-row');
             const term = e.target.getAttribute('data-term');
+            console.log('Approving task at row:', rowIndex, 'in sheet:', term);
             await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
             updateDashboard();
           }
@@ -490,7 +493,7 @@ async function updateDashboard() {
     const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
     const progressBar = document.getElementById('progress');
     progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalApprovedMinutes} / ${totalRequiredMinutes} minutes)`;
+    progressBar.textContent = `${Math.round(progressPercentage)}% (${totalApprovedMinutes} / ${totalRequiredMinutes) minutes)`;
     pendingRequestsDiv.classList.add('hidden');
   } else {
     const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);

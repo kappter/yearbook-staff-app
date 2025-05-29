@@ -1,115 +1,123 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yearbook Staff App</title>
-  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="dashboard" class="dashboard">
-    <h1>Yearbook Staff App</h1>
-    <div id="user-info"></div>
-    <button id="login-btn" class="btn">Login with Google</button>
-    <button id="logout-btn" class="btn hidden">Logout</button>
-    <button id="theme-toggle" class="btn">Dark Mode</button>
-    <div id="term-selector" class="hidden">
-      <label for="term-select">Select Term:</label>
-      <select id="term-select">
-        <option value="Sheet1">2025-2026</option>
-        <option value="Sheet2">2026-2027</option>
-      </select>
-    </div>
-    <div id="task-buttons" class="hidden">
-      <button id="create-work-btn" class="btn">Create Work</button>
-      <button id="report-work-btn" class="btn">Report Work</button>
-      <button id="weekly-report-btn" class="btn">Weekly Report</button>
-      <button id="overall-report-btn" class="btn">Overall Report</button>
-    </div>
-    <div id="progress-container">
-      <div id="progress" class="progress-bar"></div>
-    </div>
+  <div id="user-info"></div>
+  <button id="login-btn" class="btn">Login with Google</button>
+  <button id="logout-btn" class="btn">Logout</button>
+  <button id="theme-toggle" class="btn">Dark Mode</button>
+  
+  <div id="term-selector" class="hidden">
+    <label for="term-select">Select Term:</label>
+    <select id="term-select">
+      <option value="Sheet1">2025-2026</option>
+      <option value="Sheet2">2026-2027</option>
+    </select>
+  </div>
+
+  <div id="task-buttons" class="hidden">
+    <button id="create-work-btn" class="btn">Create Work</button>
+    <button id="report-work-btn" class="btn">Report Work</button>
+    <button id="weekly-report-btn" class="btn">Weekly Report</button>
+    <button id="overall-report-btn" class="btn">Overall Report</button>
+  </div>
+
+  <div id="dashboard">
     <div id="pending-requests" class="hidden">
       <h2>Pending Requests</h2>
       <div id="pending-requests-content"></div>
     </div>
+    <div id="progress" style="width: 0%;"></div>
   </div>
 
-  <!-- Existing Modals -->
+  <div id="first-login-modal" class="modal hidden">
+    <h2>First Login - Select Team and Role</h2>
+    <form id="first-login-form">
+      <label for="user-team">Team:</label>
+      <select id="user-team" required>
+        <option value="">Select a team</option>
+        <option value="Photography">Photography</option>
+        <option value="Writing">Writing</option>
+        <option value="Design">Design</option>
+        <option value="Leadership">Leadership</option>
+      </select>
+      <div id="role-selection" class="hidden">
+        <label for="user-role">Role:</label>
+        <select id="user-role" required>
+          <option value="">Select a role</option>
+        </select>
+      </div>
+      <button type="submit">Submit</button>
+      <button type="button" onclick="closeAllModals()">Cancel</button>
+    </form>
+  </div>
+
   <div id="create-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Create Work</h2>
-      <form id="create-form">
-        <label for="team">Team:</label>
-        <select id="team" required>
-          <option value="">Select a team</option>
-          <option value="Photography">Photography</option>
-          <option value="Writing">Writing</option>
-          <option value="Design">Design</option>
-          <option value="Leadership">Leadership</option>
-        </select>
-        <label for="task-type">Task Type:</label>
-        <select id="task-type" required>
-          <option value="">Select a task type</option>
-          <option value="Photo Shoot">Photo Shoot</option>
-          <option value="Article">Article</option>
-          <option value="Layout">Layout</option>
-          <option value="Meeting">Meeting</option>
-        </select>
-        <label for="description">Description:</label>
-        <input type="text" id="description" required>
-        <label for="estimated-time">Estimated Time (minutes):</label>
-        <input type="number" id="estimated-time" required>
-        <button type="submit" class="btn">Submit</button>
-        <button type="button" id="create-cancel" class="btn">Cancel</button>
-      </form>
-    </div>
+    <h2>Create Work</h2>
+    <form id="create-form">
+      <label for="team">Team:</label>
+      <select id="team" required>
+        <option value="">Select a team</option>
+        <option value="Photography">Photography</option>
+        <option value="Writing">Writing</option>
+        <option value="Design">Design</option>
+        <option value="Leadership">Leadership</option>
+      </select>
+      <label for="task-type">Task Type:</label>
+      <select id="task-type" required>
+        <option value="">Select a task type</option>
+        <option value="Photo Shoot">Photo Shoot</option>
+        <option value="Article">Article</option>
+        <option value="Layout">Layout</option>
+        <option value="Meeting">Meeting</option>
+      </select>
+      <label for="description">Description:</label>
+      <textarea id="description" required></textarea>
+      <label for="estimated-time">Estimated Time (minutes):</label>
+      <input type="number" id="estimated-time" required>
+      <button type="submit">Submit</button>
+      <button type="button" id="create-cancel">Cancel</button>
+    </form>
   </div>
 
   <div id="report-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Report Work</h2>
-      <form id="report-form">
-        <label for="task-select">Select Task:</label>
-        <select id="task-select" required>
-          <option value="">Select a task</option>
-        </select>
-        <label for="artifact-link">Artifact Link:</label>
-        <input type="url" id="artifact-link">
-        <label for="actual-time">Actual Time (minutes):</label>
-        <input type="number" id="actual-time" required>
-        <button type="submit" class="btn">Submit</button>
-        <button type="button" id="report-cancel" class="btn">Cancel</button>
-      </form>
-    </div>
+    <h2>Report Work</h2>
+    <form id="report-form">
+      <label for="task-select">Select Task:</label>
+      <select id="task-select" required>
+        <option value="">Select a task</option>
+      </select>
+      <label for="artifact-link">Artifact Link:</label>
+      <input type="url" id="artifact-link" required>
+      <label for="actual-time">Actual Time (minutes):</label>
+      <input type="number" id="actual-time" required>
+      <button type="submit">Submit</button>
+      <button type="button" id="report-cancel">Cancel</button>
+    </form>
   </div>
 
   <div id="weekly-report-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Weekly Report</h2>
-      <div id="weekly-report-content"></div>
-      <button id="weekly-report-close" class="btn">Close</button>
-    </div>
+    <h2>Weekly Report</h2>
+    <div id="weekly-report-content"></div>
+    <button id="weekly-report-close">Close</button>
   </div>
 
   <div id="overall-report-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Overall Report</h2>
-      <div id="overall-report-content"></div>
-      <button id="overall-report-close" class="btn">Close</button>
-    </div>
+    <h2>Overall Report</h2>
+    <div id="overall-report-content"></div>
+    <button id="overall-report-close">Close</button>
   </div>
 
-  <!-- New Hours Report Modal -->
   <div id="hours-report-modal" class="modal hidden">
-    <div class="modal-content">
-      <h2>Hours Report</h2>
-      <div id="hours-report-content"></div>
-      <button id="hours-report-close" class="btn">Close</button>
-    </div>
+    <h2>Hours Report</h2>
+    <div id="hours-report-content"></div>
+    <button id="hours-report-close">Close</button>
   </div>
 
   <script src="script.js"></script>
-  <script src="utils.js"></script>
 </body>
 </html>

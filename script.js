@@ -49,7 +49,7 @@ function initializeGoogleAuth() {
     hd: 'graniteschools.org',
     error_callback: (error) => {
       console.error('OAuth error:', error);
-      alert('Popup blocked by browser. Please allow popups for this site and try again.');
+      alert('Authentication failed. Please ensure popups are allowed and try again.');
     }
   });
 
@@ -90,10 +90,20 @@ function initializeGoogleAuth() {
 
 async function fetchUserInfo() {
   try {
+    if (!accessToken) {
+      console.error('No access token available for user info fetch');
+      tokenClient.requestAccessToken();
+      return;
+    }
     const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     if (!response.ok) {
+      if (response.status === 401) {
+        console.log('401 on user info, requesting new token');
+        tokenClient.requestAccessToken();
+        return;
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const userInfo = await response.json();
@@ -183,11 +193,16 @@ function initGoogleSheets() {
     console.error('window.utils is not defined. Ensure utils.js is loaded.');
     return;
   }
+  if (!accessToken) {
+    console.error('No access token available for initGoogleSheets');
+    tokenClient.requestAccessToken();
+    return;
+  }
   const userEmail = localStorage.getItem('userEmail');
   const userTeam = localStorage.getItem('userTeam');
   const userRole = localStorage.getItem('userRole');
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
-  window.utils.loadOpenTasks(accessToken, userEmail, userTeam, userRole, selectedTerm).then(tasks => {
+  window.utils.loadOpenTasks(accessToken, userEmail, userTeam, userRole, selectedTerm, tokenClient).then(tasks => {
     openTasks = tasks;
     const taskSelect = document.getElementById('task-select');
     taskSelect.innerHTML = '<option value="">Select a task</option>';
@@ -234,21 +249,28 @@ document.addEventListener('DOMContentLoaded', () => {
         completionDate: ''
       };
       console.log('Creating task:', taskData);
-      if (window.utils) {
-        await window.utils.appendTask(accessToken, taskData, 'Sheet1');
-      } else {
+      if (!window.utils) {
         console.error('window.utils is not defined. Cannot append task.');
         return;
       }
-      
-      closeAllModals();
-      const taskButtons = document.getElementById('task-buttons');
-      taskButtons.classList.remove('hidden');
-      taskButtons.classList.add('visible');
-      const termSelector = document.getElementById('term-selector');
-      termSelector.classList.remove('hidden');
-      termSelector.classList.add('visible');
-      initGoogleSheets();
+      if (!accessToken) {
+        console.error('No access token available for task append');
+        tokenClient.requestAccessToken();
+        return;
+      }
+      try {
+        await window.utils.appendTask(accessToken, taskData, 'Sheet1', tokenClient);
+        closeAllModals();
+        const taskButtons = document.getElementById('task-buttons');
+        taskButtons.classList.remove('hidden');
+        taskButtons.classList.add('visible');
+        const termSelector = document.getElementById('term-selector');
+        termSelector.classList.remove('hidden');
+        termSelector.classList.add('visible');
+        initGoogleSheets();
+      } catch (error) {
+        console.error('Error appending task:', error);
+      }
     };
   } else {
     console.error('Form with ID "first-login-form" not found.');
@@ -265,44 +287,53 @@ document.getElementById('weekly-report-btn').onclick = async () => {
     console.error('window.utils is not defined. Cannot fetch tasks.');
     return;
   }
-  if (userRole === 'Advisor' || userRole === 'Chief Editor') {
-    tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
-  } else if (userRole === 'Editor') {
-    tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
-  } else {
-    tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  if (!accessToken) {
+    console.error('No access token available for weekly report');
+    tokenClient.requestAccessToken();
+    return;
   }
+  try {
+    if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+      tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
+    } else if (userRole === 'Editor') {
+      tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
+    } else {
+      tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
+    }
 
-  const now = new Date();
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
 
-  let weeklyTasks = tasks.filter(task => {
-    const taskDate = new Date(task.submissionDate);
-    return taskDate >= startOfWeek && taskDate <= endOfWeek;
-  });
-
-  const content = document.getElementById('weekly-report-content');
-  if (weeklyTasks.length === 0) {
-    content.innerHTML = `<p>No tasks completed this week in ${selectedTerm}.</p>`;
-  } else {
-    let totalTime = 0;
-    let html = '<ul>';
-    weeklyTasks.forEach(task => {
-      const timeSpent = parseFloat(task.timeSpent) || 0;
-      html += `<li>${task.description} (${timeSpent} minutes, ${task.status})</li>`;
-      totalTime += timeSpent;
+    let weeklyTasks = tasks.filter(task => {
+      const taskDate = new Date(task.submissionDate);
+      return taskDate >= startOfWeek && taskDate <= endOfWeek;
     });
-    html += '</ul>';
-    html += `<p>Total Time This Week in ${selectedTerm}: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
-    content.innerHTML = html;
+
+    const content = document.getElementById('weekly-report-content');
+    if (weeklyTasks.length === 0) {
+      content.innerHTML = `<p>No tasks completed this week in ${selectedTerm}.</p>`;
+    } else {
+      let totalTime = 0;
+      let html = '<ul>';
+      weeklyTasks.forEach(task => {
+        const timeSpent = parseFloat(task.timeSpent) || 0;
+        html += `<li>${task.description} (${timeSpent} minutes, ${task.status})</li>`;
+        totalTime += timeSpent;
+      });
+      html += '</ul>';
+      html += `<p>Total Time This Week in ${selectedTerm}: ${totalTime} minutes (${(totalTime / 60).toFixed(1)} hours)</p>`;
+      content.innerHTML = html;
+    }
+    closeAllModals();
+    document.getElementById('weekly-report-modal').classList.remove('hidden');
+    document.getElementById('weekly-report-modal').classList.add('visible');
+  } catch (error) {
+    console.error('Error generating weekly report:', error);
   }
-  closeAllModals();
-  document.getElementById('weekly-report-modal').classList.remove('hidden');
-  document.getElementById('weekly-report-modal').classList.add('visible');
 };
 
 document.getElementById('overall-report-btn').onclick = async () => {
@@ -315,41 +346,50 @@ document.getElementById('overall-report-btn').onclick = async () => {
     console.error('window.utils is not defined. Cannot fetch tasks.');
     return;
   }
-  if (userRole === 'Advisor' || userRole === 'Chief Editor') {
-    tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
-  } else if (userRole === 'Editor') {
-    tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
-  } else {
-    tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+  if (!accessToken) {
+    console.error('No access token available for overall report');
+    tokenClient.requestAccessToken();
+    return;
   }
+  try {
+    if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+      tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
+    } else if (userRole === 'Editor') {
+      tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
+    } else {
+      tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
+    }
 
-  const periods = [
-    { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
-    { name: '2026 Term 1', start: new Date('2025-09-01'), end: new Date('2025-11-30') },
-    { name: '2026 Term 2', start: new Date('2025-12-01'), end: new Date('2026-02-28') },
-    { name: '2026 Term 3', start: new Date('2026-03-01'), end: new Date('2026-05-31') },
-    { name: 'Post Publication', start: new Date('2026-06-01'), end: new Date('2026-08-31') }
-  ];
+    const periods = [
+      { name: 'Summer Work', start: new Date('2025-06-01'), end: new Date('2025-08-31') },
+      { name: '2026 Term 1', start: new Date('2025-09-01'), end: new Date('2025-11-30') },
+      { name: '2026 Term 2', start: new Date('2025-12-01'), end: new Date('2026-02-28') },
+      { name: '2026 Term 3', start: new Date('2026-03-01'), end: new Date('2026-05-31') },
+      { name: 'Post Publication', start: new Date('2026-06-01'), end: new Date('2026-08-31') }
+    ];
 
-  const report = periods.map(period => {
-    const periodTasks = tasks.filter(task => {
-      const taskDate = new Date(task.submissionDate);
-      return taskDate >= period.start && taskDate <= period.end && task.status === 'Approved';
+    const report = periods.map(period => {
+      const periodTasks = tasks.filter(task => {
+        const taskDate = new Date(task.submissionDate);
+        return taskDate >= period.start && taskDate <= period.end && task.status === 'Approved';
+      });
+      const totalTime = periodTasks.reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
+      return { period: period.name, totalTime };
     });
-    const totalTime = periodTasks.reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
-    return { period: period.name, totalTime };
-  });
 
-  const content = document.getElementById('overall-report-content');
-  let html = `<p>Overall Report for ${selectedTerm}</p><ul>`;
-  report.forEach(r => {
-    html += `<li>${r.period}: ${r.totalTime} minutes (${(r.totalTime / 60).toFixed(1)} hours)</li>`;
-  });
-  html += '</ul>';
-  content.innerHTML = html;
-  closeAllModals();
-  document.getElementById('overall-report-modal').classList.remove('hidden');
-  document.getElementById('overall-report-modal').classList.add('visible');
+    const content = document.getElementById('overall-report-content');
+    let html = `<p>Overall Report for ${selectedTerm}</p><ul>`;
+    report.forEach(r => {
+      html += `<li>${r.period}: ${r.totalTime} minutes (${(r.totalTime / 60).toFixed(1)} hours)</li>`;
+    });
+    html += '</ul>';
+    content.innerHTML = html;
+    closeAllModals();
+    document.getElementById('overall-report-modal').classList.remove('hidden');
+    document.getElementById('overall-report-modal').classList.add('visible');
+  } catch (error) {
+    console.error('Error generating overall report:', error);
+  }
 };
 
 document.getElementById('weekly-report-close').onclick = () => {
@@ -407,24 +447,34 @@ document.getElementById('create-form').onsubmit = async (e) => {
   };
   console.log('Creating task:', taskData);
   if (!window.utils) {
-    console.error('Cannot append task: window.utils is not defined.');
+    console.error('window.utils is not defined. Cannot append task.');
+    return;
+  }
+  if (!accessToken) {
+    console.error('No access token available for task creation');
+    tokenClient.requestAccessToken();
     return;
   }
   try {
-    await window.utils.appendTask(accessToken, taskData, selectedTerm);
+    await window.utils.appendTask(accessToken, taskData, selectedTerm, tokenClient);
     closeAllModals();
     document.getElementById('create-form').reset();
     initGoogleSheets();
   } catch (error) {
-    console.error('Error appending task:', error);
+    console.error('Error creating task:', error);
   }
 };
 
 document.getElementById('report-form').onsubmit = async (e) => {
   e.preventDefault();
-  const selectedTermSheet = document.getElementById('term-select').value || 'Sheet1';
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   const rowIndex = document.getElementById('task-select').value;
   if (!rowIndex) return;
+  if (!accessToken) {
+    console.error('No access token available for task report');
+    tokenClient.requestAccessToken();
+    return;
+  }
   const taskData = {
     userEmail: localStorage.getItem('userEmail'),
     userName: localStorage.getItem('userName'),
@@ -440,7 +490,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
   };
   console.log('Reporting task:', taskData);
   try {
-    await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${selectedTermSheet}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
+    const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${selectedTerm}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -466,6 +516,14 @@ document.getElementById('report-form').onsubmit = async (e) => {
         ]]
       })
     });
+    if (!response.ok) {
+      if (response.status === 401) {
+        console.log('401 on report task, requesting new token');
+        tokenClient.requestAccessToken();
+        return;
+      }
+      throw new Error(`Failed to report task: ${response.status}`);
+    }
     closeAllModals();
     document.getElementById('report-form').reset();
     initGoogleSheets();
@@ -486,10 +544,15 @@ async function updateDashboard() {
     console.error('window.utils is not defined. Cannot update dashboard.');
     return;
   }
+  if (!accessToken) {
+    console.error('No access token available for dashboard update');
+    tokenClient.requestAccessToken();
+    return;
+  }
 
   try {
     if (userRole === 'Editor') {
-      const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+      const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
       const pendingTasks = teamTasks.filter(task => task.status === 'Pending');
       pendingRequestsDiv.classList.remove('hidden');
       if (pendingTasks.length === 0) {
@@ -524,10 +587,10 @@ async function updateDashboard() {
               console.log('Approving task at row:', rowIndex, 'in sheet:', term);
               try {
                 e.target.disabled = true;
-                await window.utils.updateTaskStatus(accessToken, term, rowIndex);
+                await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail, tokenClient);
                 const taskItem = e.target.closest(`li[data-row="${rowIndex}"]`);
                 if (taskItem) taskItem.remove();
-                const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+                const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
                 const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
                 const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
                 const totalApprovedMinutes = teamTasks
@@ -568,7 +631,7 @@ async function updateDashboard() {
       reportButton.onclick = () => showHoursReport();
       pendingRequestsDiv.appendChild(reportButton);
     } else if (userRole === 'Staff') {
-      const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+      const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
       const totalRequiredMinutes = 270;
       const totalCompletedMinutes = tasks
         .filter(task => task.status === 'Approved')
@@ -576,8 +639,8 @@ async function updateDashboard() {
       const progressPercentage = totalRequiredMinutes ? (totalCompletedMinutes / totalRequiredMinutes) * 100 : 0;
       const progressBar = document.getElementById('progress');
       progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-      const safeTotalCompleted = isNaN(totalCompletedMinutes) ? 0 : totalCompletedMinutes;
-      progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalCompleted} / ${totalRequiredMinutes} minutes)`;
+      const safeTotalCompletedMinutes = isNaN(totalCompletedMinutes) ? 0 : totalCompletedMinutes;
+      progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalCompletedMinutes} / ${totalRequiredMinutes} minutes)`;
       pendingRequestsDiv.classList.add('hidden');
 
       const reportButton = document.createElement('button');
@@ -587,7 +650,7 @@ async function updateDashboard() {
       reportButton.onclick = () => showHoursReport();
       document.getElementById('dashboard').appendChild(reportButton);
     } else if (userRole === 'Advisor' || userRole === 'Chief Editor') {
-      const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+      const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
       const totalMembers = [...new Set(allTasks.map(task => task.userEmail))].length;
       const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
       const totalApprovedMinutes = allTasks
@@ -613,35 +676,40 @@ async function showHoursReport() {
   const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   let tasks;
   if (!window.utils) {
-    console.error('Cannot fetch tasks: window.utils is not defined.');
+    console.error('window.utils is not defined. Cannot fetch tasks.');
+    return;
+  }
+  if (!accessToken) {
+    console.error('No access token available for hours report');
+    tokenClient.requestAccessToken();
     return;
   }
   try {
     if (userRole === 'Advisor' || userRole === 'Chief Editor') {
-      tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm);
+      tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
     } else if (userRole === 'Editor') {
-      tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+      tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
     } else {
-      tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm);
+      tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
     }
 
     let totalMinutes = 0;
-    let html = `<h3>Hours Report for ${selectedTerm}</h3><ul>`;
+    let html = `<h2>Hours Report for ${selectedTerm}</h2><ul>`;
     tasks.forEach(task => {
       const timeSpent = parseFloat(task.timeSpent) || 0;
       const creationDate = task.creationDate ? new Date(task.creationDate).toLocaleString() : 'N/A';
       const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : 'N/A';
-      html += `<li>${task.userEmail}: ${task.description} (${timeSpent} minutes, ${(timeSpent / 60).toFixed(1)} hours)<br>Created: ${creationDate}, Completed: ${completionDate}, Status: ${task.status}</li>`;
+      html += `<li>${task.userEmail}: ${task.description} - ${timeSpent} minutes (${(timeSpent / 60).toFixed(2)} hours), Created: ${creationDate}, Completed: ${completionDate}, Status: ${task.status}</li>`;
       totalMinutes += timeSpent;
     });
-    html += `</ul><p>Total hours: ${(totalMinutes / 60).toFixed(1)} (${totalMinutes} minutes)</p>`;
+    html += `</ul><p>Total Hours: ${(totalMinutes / 60).toFixed(2)} hours (${totalMinutes} minutes)</p>`;
     const content = document.getElementById('hours-report-content');
     content.innerHTML = html;
     closeAllModals();
     document.getElementById('hours-report-modal').classList.remove('hidden');
     document.getElementById('hours-report-modal').classList.add('visible');
   } catch (error) {
-    console.error('Error fetching hours report:', error);
+    console.error('Error generating hours report:', error);
   }
 }
 

@@ -55,7 +55,7 @@ button {
   background-color: var(--button-bg);
   color: var(--text-color);
   cursor: pointer;
-  width: auto; /* Changed to auto for better button sizing in modals */
+  width: 100%; /* Full width on mobile */
   box-sizing: border-box;
 }
 
@@ -143,27 +143,11 @@ textarea {
 
 .buttons {
   text-align: right;
-  margin-top: 15px; /* Added for better spacing */
 }
 
 .buttons button {
   margin-left: 10px;
-  min-width: 80px; /* Ensure buttons have a minimum width */
-}
-
-/* Specific styling for first-login-modal */
-#first-login-modal .modal-content {
-  padding: 20px;
-}
-
-#first-login-modal form div {
-  margin-bottom: 15px;
-}
-
-#first-login-modal .buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px; /* Space between Submit and Cancel buttons */
+  width: auto; /* Allow buttons to size naturally */
 }
 
 /* Mobile Responsiveness */
@@ -201,19 +185,11 @@ textarea {
 
   .buttons {
     text-align: center;
-    display: flex;
-    flex-direction: column; /* Stack buttons vertically on mobile */
-    gap: 10px; /* Space between buttons */
   }
 
   .buttons button {
     width: 100%;
     margin: 5px 0;
-  }
-
-  #first-login-modal .buttons {
-    flex-direction: column; /* Stack buttons in first-login-modal on mobile */
-    align-items: stretch;
   }
 }
 

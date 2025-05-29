@@ -197,45 +197,52 @@ function initGoogleSheets() {
   });
 }
 
-document.getElementById('first-login-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const userTeam = document.getElementById('user-team').value;
-  const userRole = document.getElementById('user-role').value;
-  if (!userTeam || !userRole) {
-    alert('Please select both a team and a role.');
-    return;
+document.addEventListener('DOMContentLoaded', () => {
+  const firstLoginForm = document.getElementById('first-login-form');
+  if (firstLoginForm) {
+    firstLoginForm.onsubmit = async (e) => {
+      e.preventDefault();
+      const userTeam = document.getElementById('user-team').value;
+      const userRole = document.getElementById('user-role').value;
+      if (!userTeam || !userRole) {
+        alert('Please select both a team and a role.');
+        return;
+      }
+      localStorage.setItem('userTeam', userTeam);
+      localStorage.setItem('userRole', userRole);
+      
+      const taskData = {
+        userEmail: localStorage.getItem('userEmail'),
+        userName: localStorage.getItem('userName'),
+        team: userTeam,
+        taskType: 'Profile Setup',
+        description: `User assigned to ${userTeam} as ${userRole}`,
+        timeSpent: '0',
+        status: 'Completed',
+        artifactLink: '',
+        editorNotes: '',
+        editorEmail: '',
+        userTeam: userTeam,
+        userRole: userRole,
+        creationDate: new Date().toISOString(),
+        completionDate: ''
+      };
+      console.log('Creating task:', taskData);
+      await window.utils.appendTask(accessToken, taskData, 'Sheet1');
+      
+      closeAllModals();
+      const taskButtons = document.getElementById('task-buttons');
+      taskButtons.classList.remove('hidden');
+      taskButtons.classList.add('visible');
+      const termSelector = document.getElementById('term-selector');
+      termSelector.classList.remove('hidden');
+      termSelector.classList.add('visible');
+      initGoogleSheets();
+    };
+  } else {
+    console.error('Form with ID "first-login-form" not found.');
   }
-  localStorage.setItem('userTeam', userTeam);
-  localStorage.setItem('userRole', userRole);
-  
-  const taskData = {
-    userEmail: localStorage.getItem('userEmail'),
-    userName: localStorage.getItem('userName'),
-    team: userTeam,
-    taskType: 'Profile Setup',
-    description: `User assigned to ${userTeam} as ${userRole}`,
-    timeSpent: '0',
-    status: 'Completed',
-    artifactLink: '',
-    editorNotes: '',
-    editorEmail: '',
-    userTeam: userTeam,
-    userRole: userRole,
-    creationDate: new Date().toISOString(),
-    completionDate: ''
-  };
-  console.log('Creating task:', taskData);
-  await window.utils.appendTask(accessToken, taskData, 'Sheet1');
-  
-  closeAllModals();
-  const taskButtons = document.getElementById('task-buttons');
-  taskButtons.classList.remove('hidden');
-  taskButtons.classList.add('visible');
-  const termSelector = document.getElementById('term-selector');
-  termSelector.classList.remove('hidden');
-  termSelector.classList.add('visible');
-  initGoogleSheets();
-};
+});
 
 document.getElementById('weekly-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');

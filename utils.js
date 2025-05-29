@@ -1,6 +1,28 @@
+console.log('utils.js loaded');
+
+async function refreshAccessToken(tokenClient) {
+  return new Promise((resolve, reject) => {
+    tokenClient.requestAccessToken({
+      callback: (tokenResponse) => {
+        if (tokenResponse.access_token) {
+          console.log('New access token obtained:', tokenResponse.access_token);
+          resolve(tokenResponse.access_token);
+        } else {
+          reject(new Error('Failed to obtain new access token'));
+        }
+      },
+      error_callback: (error) => {
+        console.error('Token refresh error:', error);
+        reject(error);
+      }
+    });
+  });
+}
+
 window.utils = {
-  loadOpenTasks: async (accessToken, userEmail, userTeam, userRole, sheetName) => {
+  loadOpenTasks: async (accessToken, userEmail, userTeam, userRole, sheetName, tokenClient) => {
     try {
+      console.log('loadOpenTasks: Using access token:', accessToken);
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`,
         {
@@ -8,6 +30,11 @@ window.utils = {
         }
       );
       if (!response.ok) {
+        if (response.status === 401 && tokenClient) {
+          console.log('401 detected, attempting token refresh');
+          const newToken = await refreshAccessToken(tokenClient);
+          return window.utils.loadOpenTasks(newToken, userEmail, userTeam, userRole, sheetName, tokenClient);
+        }
         throw new Error(`Failed to fetch tasks: ${response.status}`);
       }
       const data = await response.json();
@@ -44,8 +71,9 @@ window.utils = {
     }
   },
 
-  appendTask: async (accessToken, taskData, sheetName) => {
+  appendTask: async (accessToken, taskData, sheetName, tokenClient) => {
     try {
+      console.log('appendTask: Using access token:', accessToken);
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A:O:append?valueInputOption=RAW`,
         {
@@ -76,6 +104,11 @@ window.utils = {
         }
       );
       if (!response.ok) {
+        if (response.status === 401 && tokenClient) {
+          console.log('401 detected, attempting token refresh');
+          const newToken = await refreshAccessToken(tokenClient);
+          return window.utils.appendTask(newToken, taskData, sheetName, tokenClient);
+        }
         throw new Error(`Failed to append task: ${response.status}`);
       }
       return await response.json();
@@ -85,8 +118,9 @@ window.utils = {
     }
   },
 
-  fetchAllTasks: async (accessToken, sheetName) => {
+  fetchAllTasks: async (accessToken, sheetName, tokenClient) => {
     try {
+      console.log('fetchAllTasks: Using access token:', accessToken);
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A2:O`,
         {
@@ -94,6 +128,11 @@ window.utils = {
         }
       );
       if (!response.ok) {
+        if (response.status === 401 && tokenClient) {
+          console.log('401 detected, attempting token refresh');
+          const newToken = await refreshAccessToken(tokenClient);
+          return window.utils.fetchAllTasks(newToken, sheetName, tokenClient);
+        }
         throw new Error(`Failed to fetch all tasks: ${response.status}`);
       }
       const data = await response.json();
@@ -123,9 +162,9 @@ window.utils = {
     }
   },
 
-  fetchTeamTasks: async (accessToken, team, sheetName) => {
+  fetchTeamTasks: async (accessToken, team, sheetName, tokenClient) => {
     try {
-      const tasks = await window.utils.fetchAllTasks(accessToken, sheetName);
+      const tasks = await window.utils.fetchAllTasks(accessToken, sheetName, tokenClient);
       return tasks.filter(task => task.team === team);
     } catch (error) {
       console.error('Error fetching team tasks:', error);
@@ -133,9 +172,9 @@ window.utils = {
     }
   },
 
-  fetchUserTasks: async (accessToken, userEmail, sheetName) => {
+  fetchUserTasks: async (accessToken, userEmail, sheetName, tokenClient) => {
     try {
-      const tasks = await window.utils.fetchAllTasks(accessToken, sheetName);
+      const tasks = await window.utils.fetchAllTasks(accessToken, sheetName, tokenClient);
       return tasks.filter(task => task.userEmail === userEmail);
     } catch (error) {
       console.error('Error fetching user tasks:', error);
@@ -143,8 +182,9 @@ window.utils = {
     }
   },
 
-  updateTaskStatus: async (accessToken, sheetName, rowIndex, status, editorEmail) => {
+  updateTaskStatus: async (accessToken, sheetName, rowIndex, status, editorEmail, tokenClient) => {
     try {
+      console.log('updateTaskStatus: Using access token:', accessToken);
       const response = await fetch(
         `https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!H${rowIndex}:K${rowIndex}?valueInputOption=RAW`,
         {
@@ -159,6 +199,11 @@ window.utils = {
         }
       );
       if (!response.ok) {
+        if (response.status === 401 && tokenClient) {
+          console.log('401 detected, attempting token refresh');
+          const newToken = await refreshAccessToken(tokenClient);
+          return window.utils.updateTaskStatus(newToken, sheetName, rowIndex, status, editorEmail, tokenClient);
+        }
         throw new Error(`Failed to update task status: ${response.status}`);
       }
       return await response.json();

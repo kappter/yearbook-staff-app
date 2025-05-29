@@ -191,43 +191,45 @@ window.utils = {
       });
     } catch (error) {
       console.error('Error in appendTask:', error);
+      throw error;
     }
   },
 
   updateTaskStatus: async (accessToken, sheetName, rowIndex, status, editorEmail) => {
     try {
-      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
+      // Step 1: Fetch the existing row to preserve other fields
+      const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch row ${rowIndex}: HTTP status ${response.status}`);
+      }
+      const data = await response.json();
+      const row = data.values[0];
+
+      // Step 2: Update only the status (column H, index 7) and editorEmail (column K, index 10)
+      row[7] = status; // Status
+      row[9] = new Date().toISOString(); // Submission Date
+      row[10] = editorEmail; // Editor Email
+
+      // Step 3: Write the updated row back
+      const updateResponse = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          values: [[
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            status,
-            undefined,
-            new Date().toISOString(),
-            editorEmail,
-            undefined,
-            undefined,
-            undefined,
-            undefined
-          ]]
+          values: [row]
         })
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!updateResponse.ok) {
+        throw new Error(`Failed to update row ${rowIndex}: HTTP status ${updateResponse.status}`);
       }
+      console.log(`Successfully updated row ${rowIndex} to status ${status}`);
     } catch (error) {
       console.error('Error in updateTaskStatus:', error);
-      throw error; // Re-throw to be caught by the caller
+      throw error;
     }
   }
 };

@@ -452,7 +452,7 @@ async function updateDashboard() {
         const creationDate = task.creationDate ? new Date(task.creationDate).toLocaleString() : 'N/A';
         const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : 'N/A';
         html += `
-          <li>
+          <li data-row="${task.rowIndex}">
             <input type="checkbox" class="approve-task" data-row="${task.rowIndex}" data-term="${selectedTerm}">
             ${task.userEmail}: ${task.description} (${task.timeSpent} minutes)<br>
             Created: ${creationDate}<br>
@@ -479,8 +479,22 @@ async function updateDashboard() {
               // Disable checkbox to prevent multiple clicks
               e.target.disabled = true;
               await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail);
-              // Refresh dashboard after successful update
-              updateDashboard();
+              // Remove the task from the UI immediately
+              const taskItem = e.target.closest(`li[data-row="${rowIndex}"]`);
+              if (taskItem) taskItem.remove();
+              // Update progress bar without full refresh
+              const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm);
+              const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
+              const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
+              const totalApprovedMinutes = teamTasks
+                .filter(task => task.status === 'Approved')
+                .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
+              const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
+              const progressBar = document.getElementById('progress');
+              progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
+              const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
+              const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes;
+              progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
             } catch (error) {
               console.error('Error approving task:', error);
               // Re-enable checkbox on error

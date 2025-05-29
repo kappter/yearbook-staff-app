@@ -37,89 +37,130 @@
   </div>
 
   <div id="first-login-modal" class="modal hidden">
-    <h2>First Login - Select Team and Role</h2>
-    <form id="first-login-form">
-      <label for="user-team">Team:</label>
-      <select id="user-team" required>
-        <option value="">Select a team</option>
-        <option value="Photography">Photography</option>
-        <option value="Writing">Writing</option>
-        <option value="Design">Design</option>
-        <option value="Leadership">Leadership</option>
-      </select>
-      <div id="role-selection" class="hidden">
-        <label for="user-role">Role:</label>
-        <select id="user-role" required>
-          <option value="">Select a role</option>
-        </select>
-      </div>
-      <button type="submit">Submit</button>
-      <button type="button" onclick="closeAllModals()">Cancel</button>
-    </form>
+    <div class="modal-content">
+      <h2>First Login - Select Team and Role</h2>
+      <form id="first-login-form">
+        <div>
+          <label for="user-team">Team:</label>
+          <select id="user-team" required>
+            <option value="">Select a team</option>
+            <option value="Photography">Photography</option>
+            <option value="Writing">Writing</option>
+            <option value="Design">Design</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div id="role-selection" class="hidden">
+          <label for="user-role">Role:</label>
+          <select id="user-role" required>
+            <option value="">Select a role</option>
+          </select>
+        </div>
+        <div class="buttons">
+          <button type="submit">Submit</button>
+          <button type="button" onclick="closeAllModals()">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="create-modal" class="modal hidden">
-    <h2>Create Work</h2>
-    <form id="create-form">
-      <label for="team">Team:</label>
-      <select id="team" required>
-        <option value="">Select a team</option>
-        <option value="Photography">Photography</option>
-        <option value="Writing">Writing</option>
-        <option value="Design">Design</option>
-        <option value="Leadership">Leadership</option>
-      </select>
-      <label for="task-type">Task Type:</label>
-      <select id="task-type" required>
-        <option value="">Select a task type</option>
-        <option value="Photo Shoot">Photo Shoot</option>
-        <option value="Article">Article</option>
-        <option value="Layout">Layout</option>
-        <option value="Meeting">Meeting</option>
-      </select>
-      <label for="description">Description:</label>
-      <textarea id="description" required></textarea>
-      <label for="estimated-time">Estimated Time (minutes):</label>
-      <input type="number" id="estimated-time" required>
-      <button type="submit">Submit</button>
-      <button type="button" id="create-cancel">Cancel</button>
-    </form>
+    <div class="modal-content">
+      <h2>Create Work</h2>
+      <form id="create-form">
+        <div>
+          <label for="team">Team:</label>
+          <select id="team" required>
+            <option value="">Select a team</option>
+            <option value="Photography">Photography</option>
+            <option value="Writing">Writing</option>
+            <option value="Design">Design</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div>
+          <label for="task-type">Task Type:</label>
+          <select id="task-type" required>
+            <option value="">Select a task type</option>
+            <option value="Photo Shoot">Photo Shoot</option>
+            <option value="Article">Article</option>
+            <option value="Layout">Layout</option>
+            <option value="Meeting">Meeting</option>
+          </select>
+        </div>
+        <div>
+          <label for="description">Description:</label>
+          <textarea id="description" required></textarea>
+        </div>
+        <div>
+          <label for="estimated-time">Estimated Time (minutes):</label>
+          <input type="number" id="estimated-time" required>
+        </div>
+        <div class="buttons">
+          <button type="submit">Submit</button>
+          <button type="button" id="create-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="report-modal" class="modal hidden">
-    <h2>Report Work</h2>
-    <form id="report-form">
-      <label for="task-select">Select Task:</label>
-      <select id="task-select" required>
-        <option value="">Select a task</option>
-      </select>
-      <label for="artifact-link">Artifact Link:</label>
-      <input type="url" id="artifact-link" required>
-      <label for="actual-time">Actual Time (minutes):</label>
-      <input type="number" id="actual-time" required>
-      <button type="submit">Submit</button>
-      <button type="button" id="report-cancel">Cancel</button>
-    </form>
+    <div class="modal-content">
+      <h2>Report Work</h2>
+      <form id="report-form">
+        <div>
+          <label for="task-select">Select Task:</label>
+          <select id="task-select" required>
+            <option value="">Select a task</option>
+          </select>
+        </div>
+        <div>
+          <label for="artifact-link">Artifact Link:</label>
+          <input type="url" id="artifact-link" required>
+        </div>
+        <div>
+          <label for="actual-time">Actual Time (minutes):</label>
+          <input type="number" id="actual-time" required>
+        </div>
+        <div class="buttons">
+          <button type="submit">Submit</button>
+          <button type="button" id="report-cancel">Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="weekly-report-modal" class="modal hidden">
-    <h2>Weekly Report</h2>
-    <div id="weekly-report-content"></div>
-    <button id="weekly-report-close">Close</button>
+    <div class="modal-content">
+      <h2>Weekly Report</h2>
+      <div id="weekly-report-content"></div>
+      <div class="buttons">
+        <button id="weekly-report-close">Close</button>
+      </div>
+    </div>
   </div>
 
   <div id="overall-report-modal" class="modal hidden">
-    <h2>Overall Report</h2>
-    <div id="overall-report-content"></div>
-    <button id="overall-report-close">Close</button>
+    <div class="modal-content">
+      <h2>Overall Report</h2>
+      <div id="overall-report-content"></div>
+      <div class="buttons">
+        <button id="overall-report-close">Close</button>
+      </div>
+    </div>
   </div>
 
   <div id="hours-report-modal" class="modal hidden">
-    <h2>Hours Report</h2>
-    <div id="hours-report-content"></div>
-    <button id="hours-report-close">Close</button>
+    <div class="modal-content">
+      <h2>Hours Report</h2>
+      <div id="hours-report-content"></div>
+      <div class="buttons">
+        <button id="hours-report-close">Close</button>
+      </div>
+    </div>
   </div>
 
+  <script src="utils.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

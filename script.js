@@ -62,24 +62,25 @@ function initializeGoogleAuth() {
   termSelector.classList.add('hidden');
   termSelector.classList.remove('visible');
 
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
-    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-    callback: (tokenResponse) => {
-      accessToken = tokenResponse.access_token;
-      console.log('New access token:', accessToken);
-      fetchUserInfo();
-    },
-    hd: 'graniteschools.org',
-    error_callback: (error) => {
-      console.error('OAuth error:', error);
-      if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
-        alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
-      } else {
-        alert('Authentication failed. Error: ' + error.message);
-      }
+ tokenClient = google.accounts.oauth2.initTokenClient({
+  client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
+  scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+  callback: (tokenResponse) => {
+    accessToken = tokenResponse.access_token;
+    console.log('New access token:', accessToken);
+    fetchUserInfo();
+  },
+  hd: 'graniteschools.org',
+  error_callback: (error) => {
+    console.error('OAuth error:', error);
+    if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
+      alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
+    } else {
+      alert('Authentication failed. Error: ' + error.message);
     }
-  });
+  },
+  usePopup: false // Force redirect instead of popup
+});
   localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
   tokenClient.requestAccessToken({ prompt: 'consent' });
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
@@ -299,8 +300,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tokenClient.requestAccessToken({ prompt: 'consent' });
         return;
       }
+      let spinner;
       try {
-        const spinner = showLoadingSpinner();
+        spinner = showLoadingSpinner();
         await window.utils.appendTask(accessToken, taskData, 'Sheet1', tokenClient);
         closeAllModals();
         const taskButtons = document.getElementById('task-buttons');
@@ -319,33 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     console.error('Form with ID "first-login-form" not found.');
   }
-
-  const weeklyReportClose = document.getElementById('weekly-report-close');
-  if (weeklyReportClose) {
-    weeklyReportClose.onclick = () => {
-      closeAllModals();
-    };
-  } else {
-    console.warn('Element with ID "weekly-report-close" not found.');
-  }
-
-  const overallReportClose = document.getElementById('overall-report-close');
-  if (overallReportClose) {
-    overallReportClose.onclick = () => {
-      closeAllModals();
-    };
-  } else {
-    console.warn('Element with ID "overall-report-close" not found.');
-  }
-
-  const hoursReportClose = document.getElementById('hours-report-close');
-  if (hoursReportClose) {
-    hoursReportClose.onclick = () => {
-      closeAllModals();
-    };
-  } else {
-    console.warn('Element with ID "hours-report-close" not found.');
-  }
+  // ... (rest of the event listener)
 });
 
 document.getElementById('weekly-report-btn').onclick = async () => {
@@ -628,9 +604,9 @@ async function updateDashboard() {
     tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
-
+  let spinner;
   try {
-    const spinner = showLoadingSpinner();
+    spinner = showLoadingSpinner();
     if (userRole === 'Editor' || userRole === 'Advisor' || userRole === 'Chief Editor') {
       const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
       const pendingTasks = teamTasks.filter(task => task.status === 'Pending');

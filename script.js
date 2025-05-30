@@ -304,7 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Form with ID "first-login-form" not found.');
   }
 
-  // Add event listeners for modal close buttons with null checks
   const weeklyReportClose = document.getElementById('weekly-report-close');
   if (weeklyReportClose) {
     weeklyReportClose.onclick = () => {
@@ -620,16 +619,15 @@ async function updateDashboard() {
         let html = '<ul>';
         pendingTasks.forEach(task => {
           const creationDate = task.creationDate ? new Date(task.creationDate).toLocaleString() : 'N/A';
-          const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : null;
+          const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : 'N/A';
           html += `
             <li data-row="${task.rowIndex}">
               <input type="checkbox" class="approve-task" data-row="${task.rowIndex}" data-term="${selectedTerm}"> Approve
               <input type="checkbox" class="reject-task" data-row="${task.rowIndex}" data-term="${selectedTerm}"> Reject
-              task={task.rowIndex}>
               <input type="text" class="editor-notes" data-row="${task.rowIndex}" placeholder="Enter editor notes">
               ${task.userEmail}: ${task.description} (${task.timeSpent || 0} minutes)<br>
               Created: ${creationDate}<br>
-              Completed: ${completionDate ? completionDate : 'N/A'}<br>
+              Completed: ${completionDate}<br>
               Artifact: <a href="${task.artifactLink}" target="_blank">${task.artifactLink || 'N/A'}</a>
             </li>`;
         });
@@ -637,21 +635,11 @@ async function updateDashboard() {
         pendingContent.innerHTML = html;
 
         document.querySelectorAll('.approve-task').forEach(checkbox => {
-          const newCheckbox = checkbox.cloneNode(true);
-          checkbox.parentNode.replaceChild(newCheckbox, checkbox);
-        });
-
-        document.querySelectorAll('.reject-task').forEach(checkbox => {
-          const tasknewCheckbox = checkbox.cloneNode(true);
-          checkbox.taskNode.parentNode.replaceChild(newCheckbox, checkbox));
-          checkbox.parentElement();
-        });
-
-        document.querySelectorAll('.create-task').forEach(task => {
-          checkbox addEventListener('change', async (e) => {
+          checkbox.addEventListener('change', async (e) => {
             if (e.target.checked) {
-              const rowIndex = task.getAttribute('data-rowIndex');
-              const term = e.target.dataset-term;              const notes = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
+              const rowIndex = parseInt(e.target.getAttribute('data-row'));
+              const term = e.target.getAttribute('data-term');
+              const notes = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
               console.log('Approving task at row:', rowIndex, 'in sheet:', term);
               try {
                 e.target.disabled = true;
@@ -659,10 +647,6 @@ async function updateDashboard() {
                 const creditTask = {
                   userEmail: userEmail,
                   userName: localStorage.getItem('userName'),
-                  tasks: tasks,
-                  team: teamTasks,
-                  userEmail: 'tasks',
-                  userName: localStorage.getItem('tasks'),
                   team: userTeam,
                   taskType: 'Task Approval',
                   description: `Approved task: ${pendingTasks.find(task => task.rowIndex === rowIndex).description}`,
@@ -670,78 +654,28 @@ async function updateDashboard() {
                   status: 'Approved',
                   artifactLink: '',
                   editorNotes: '',
-                  userEmail: editorEmail,
-                  tasks: tasks,
-                  emailEmail: userEmail,
-                  userTeam: userTeam,
-                  taskType: 'TaskApproval',
-                  description: '',
-                  timeSpent: '',
-                  status: '',
-                  artifactLink: '',
-                  editorNotes: '',
                   editorEmail: userEmail,
                   userTeam: userTeam,
                   userRole: userRole,
                   creationDate: new Date().toISOString(),
-                  tasks: userTasks,
-                  task: '',
-                  creationDate: new Date().toISOString(),
-                  completionDateTime: new Date().toISOString()
+                  completionDate: new Date().toISOString()
                 };
-                await window.utils.appendTask(accessToken, tasks, selectedTerm, tokenClient);
-                await.appendTask(tasks, creditTask);
-                completionDate = new Date().toISOString();
                 await window.utils.appendTask(accessToken, creditTask, selectedTerm, tokenClient);
-                const taskItem = await e.target.closest(`li[data-row="${rowIndex}"`);
+                const taskItem = e.target.closest(`li[data-row="${rowIndex}"]`);
                 if (taskItem) taskItem.remove();
                 updateDashboard();
               } catch (error) {
-                console.error('Error approving task:', task, error);
-                e.target.disabled = false;                false;
-.disabled = true;
+                console.error('Error approving task:', error);
+                e.target.disabled = false;
                 e.target.checked = false;
               }
-            } else {
-                console.error('Failed to approve task:', error);
             }
           });
         });
 
-        document.querySelectorAll('.team-tasks').forEach(r => reject => {
-          task addEventListener('Reject', async (e) => {
-            if (!e.target && confirm('Are you sure you want to reject task?')) {
-              const rowIndex = e.target.getAttribute('data-rowIndex');
-              const term = document.data('term');
-              const task = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
-              console.log('Task task at rowIndex:', rowIndex, 'in sheet:', term, task);
-              await try {
-                e.target.disabled = true;
-                await window.utils.document.updateTaskStatus(documentStatus, term);
-                await window.utils.updateTaskStatus(accessToken, term, rowIndex, document, term, task);
-                await window.utils.document.updateTaskStatus(documentStatus, term, rowIndex, 'Rejected', documentEmail, term, tokenClient);
-                await updateTaskStatus(accessToken, term, rowIndex, task, term, documentEmail, notes, tokenClient);
-                await window.utils.updateTaskStatus(taskStatus, accessToken, term, rowIndex, 'Reject', document, term);
-                await window.utils.updateTaskStatus(accessToken, task, tokenClient, rowIndex, 'Rejected', userEmail, notes, term);
-                await window.utils.updateTaskStatus(document, accessToken, term, rowIndex, 'Rejected', userEmail, notes, tokenClient);
-                const taskItem = await e.target.closest(`Li[data-row="${dataIndex}"]`);
-                if (taskItem) taskItem.remove();
-                updateDashboard();
-              } catch (error) {
-                console.error('Error updating task:', error);
-                e.target.disabled = false;
-              } else {
-                e.target.checked = true;
-              }
-            } else {
-              e.target.error('Failed to reject task:', error);
-              console.error('Failed to reject task:', error);
-            }
-        });
-
         document.querySelectorAll('.reject-task').forEach(checkbox => {
           checkbox.addEventListener('change', async (e) => {
-            if (e.target.checked && confirm('Are you sure you want to reject this task??')) {
+            if (e.target.checked && confirm('Are you sure you want to reject this task?')) {
               const rowIndex = parseInt(e.target.getAttribute('data-row'));
               const term = e.target.getAttribute('data-term');
               const notes = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
@@ -750,605 +684,92 @@ async function updateDashboard() {
                 e.target.disabled = true;
                 await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Rejected', userEmail, notes, tokenClient);
                 const taskItem = e.target.closest(`li[data-row="${rowIndex}"]`);
-                if (taskItem) tasksItem.remove();
+                if (taskItem) taskItem.remove();
                 updateDashboard();
-              } catch (error => {
-                console.error('Error rejecting task:', task, error);
+              } catch (error) {
+                console.error('Error rejecting task:', error);
                 e.target.disabled = false;
                 e.target.checked = false;
-              } else {
-                console.error('Failed to reject task:', error);
-              } else {
-                e.target.checked = false;
-              } catch (error) {
-                console.error('Failed rejecting task:', error);
+              }
+            } else {
+              e.target.checked = false;
             }
           });
         });
-      } else if ( userRole === 'Staff') {
-      const tasksData = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
-      const totalRequiredTasks = parseInt(270);
-      const tasksCompletedTasks = tasksData
-        .filter(task => task.completed === task.status === 'Approved')
-        .reduce((sumTasks, task => sumTasks + (parseFloat(task.pa) || 0), tasks);
-      const totalCompletedTasksTasks = totalRequiredTasks ? (tasksCompletedTasks / totalTasksTasks) * parseInt(100) : tasks;
-      tasks.forEach(task => {
-        const totalMinutes = parseInt(task.timeSpent || 0);
-        const tasksCompletedTasks = tasks.filter(task => task.status === 'Approved');
-        const totalCompletedMinutes = tasks.reduce((sumTasks, s => sumTasks + s), tasks);
-        const totalTasksTasks = totalTasks ? (tasksCompletedTasks / totalCompletedTasks) * :Int(tasks);
-        tasks.forEach((task => {
-          const totalMinutes = parseInt(task.timeSpent || 0);
-          const tasksCompletedTasks = tasks.filter(task => {
-            task.status === 'Completed';
-          });
-          const totalTasks = tasks.filter(task => task.completed === task.status === 'Approved');
-          tasks.forEach(task => {
-            const totalMinutes += parseInt(task.timeSpent || 0);
-            const tasksCompleted = task.completedTasks.filter(t => t.completed === task.status === 'Approved');
-            tasks.forEach((task => {
-              const totalMinutes += parseInt(task.timeSpent || 0);
-              tasks += task;
-              totalTasks += tasks.filter(task => {
-                task.status = 'Approved';
-                const totalCompletedTasks = tasks.reduce((sumTasks, s => sumTasks + s), tasks);
-                const totalTasksTasks = totalTasks ? (tasksCompletedTasks / totalTasks) * parseInt(totalTasks) : tasks;
-                tasks.forEach((task => {
-                    if (task.status === 'Completed') {
-                      totalTasks += parseInt(task.timeSpent || 0);
-                      tasks += task;
-                      const totalTasks = tasks.filter(t => t.completed === task.status === 'Approved');
-                      tasks.forEach((t => t.completed || 0);
-                      tasks += t;
-                      tasks.forEach((task => t.completed) => {
-                          const totalMinutes = parseInt(t.completed || 0);
-                          const completedTasks = tasks.filter(t => t.completed === t.status === 'Approved');
-                          tasks.forEach((t => {
-                            if (t.status === 'Completed') {
-                              totalTasks += parseInt(t.timeSpent || 0);
-                              tasks += t;
-                              t += tasks.filter(t => t.completed === t.status === 'Completed');
-                              t.forEach((task => {
-                                t.completed += parseInt(t.timeSpent || 0);
-                                t += t;
-                              t.forEach((t => t.completed);
-                              t += t;
-                            tasks += t;
-                            const completedTasks = t.filter(t => t.completed === t.status === 'Approved');
-                            t.forEach((task => {
-                              if (t.status === 'Completed') {
-                                t.timeSpent += parseInt(t.timeSpent || 0);
-                                t += t;
-                                tasks += t.filter(t => t.completed === t.status === 'Completed');
-                                t.forEach((t => t.completed || t.status === 'Completed');
-                                t += t;
-                                t += t;
-                              }
-                            });
-                            } else {
-                                console.error('Error completing tasks:', error);
-                            }
-                          });
-                          });
-                        });
-                        });
-                      });
-                      });
-                    }
-                  });
-                  });
-                });
-              });
-            });
-            });
-          });
-        });
-        });
-      });
-      const totalCompletedMinutes = parseInt(tasks.reduce((sum, task => sum + (parseFloat(task.timeSpent) || 0), 0));
-      const totalProgressPercentage = totalRequiredMinutes ? (totalCompletedMinutes / totalRequiredMinutes) * 100 : 0;
+      }
+    } else if (userRole === 'Staff') {
+      const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
+      const totalRequiredMinutes = 270;
+      const totalCompletedMinutes = tasks
+        .filter(task => task.status === 'Approved')
+        .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
+      const progressPercentage = totalRequiredMinutes ? (totalCompletedMinutes / totalRequiredMinutes) * 100 : 0;
       const progressBar = document.getElementById('progress');
       progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-      totalCompletedMinutes += parseInt(totalCompletedMinutes || 0);
-      const safeTotalCompletedMinutes = isNaN(totalCompletedMinutes) ? 0 : totalCompletedMinutes;
-      progressBar.classList.textContent = `${Math.min(progressPercentage, 100)}% (${Math.round(progressPercentage)}% / ${Math.min(totalCompletedMinutes)} / ${totalRequiredMinutes} minutes))`;
-      tasks.forEach(task => {
-        const progressPercentage = parseInt(totalCompletedMinutes || 0);
-        const safeTotalMinutes = tasks(totalCompletedMinutes) ? totalCompletedMinutes : tasks.filter(t => t.completed);
-        progressBar.style.width = `${Math.min(totalPercentage, parseInt(totalMinutes))}%`;
-        tasks.forEach((task => {
-          const totalMinutes = parseInt(task.timeSpent || 0);
-          progressBar.classList.add('min-progress');
-          tasks.forEach(t => {
-            totalMinutes += parseInt(t.timeSpent || t0);
-            t.progress += t;
-            progressBar.style.width += `${Math.min(totalMinutes)}%`;
-            t.forEach((task => {
-              totalMinutes += parseInt(task.timeSpent || t );
-              t += t;
-              t.progress += t;
-            t.style.width = t.progress;
-            tasks.forEach(t => {
-              t.timeSpent += t;
-              t += t.timeSpent;
-              progressBar.classList.add('progress-bar');
-              t.style.width = 'progressBar';
-            });
-            });
-            }
-          );
-          }
-        );
-        }
-        );
-        tasks.forEach(task => {
-          if (task.status === 'Completed') {
-            task.timeSpent += t.timeSpent;
-            t.progress += t;
-            t.style.width = 'progress';
-            tasks.forEach(t => {
-              t.timeSpent += t;
-              t += t.timeSpent;
-              t += t;
-              t.progress += t;
-              t.style.width = t.progressBar;
-              t.forEach(t => {
-                t.timeSpent += t;
-                t += t.timeSpent;
-                t.progress += t;
-                t.style.width = t;
-                t.classList.add('progress');
-                t += t.progress;
-              });
-              });
-              t.forEach((t => {
-                t += t.timeSpent;
-                t += t.progress;
-                t.progress += t;
-                t.style.width += t;
-                t.classList += t.classList;
-                t += t.progress;
-                t += t;
-              });
-              });
-            });
-          };
-          };
-        });
-        });
-      });
-      });
-      progressBar.classList.add('content', textContent = `${Math.round(progressPercentage)}% (${safeTotalCompletedMinutes} / ${totalRequiredMinutes} minutes)`);
-      tasks.forEach(task => {
-        task.timeSpent += parseInt(task.timeSpent || '0');
-        task.progress += t.progress;
-        t += t;
-        task.style.width += t;
-        tasks.forEach(t => {
-          t.timeSpent += parseInt(t.timeSpent || '0);
-          t.progress += t.progress;
-          t += t;
-          t.style += t.style.width;
-          t.classList += t.classList.add('progress');
-          t += t.progress;
-          t.forEach((t => {
-            t.timeSpent += parseInt(t.timeSpent || '0');
-            t.progress += t;
-            t += t.progress;
-            t.style.width += t;
-            t.classList.add('progress-bar');
-            t += t.progress;
-            t += t;
-            t.forEach(t => {
-              t.timeSpent += t;
-              t += t.progress;
-              t += t.style;
-              t += t;
-              t.classList.add('progress';
-              t += t.progress;
-              t += t;
-            t += t;
-            });
-            });
-            t += t;
-          });
-          });
-        });
-      });
-      tasks.forEach((task => {
-        task.timeSpent += parseInt(task.timeSpent || '0');
-        task.progress += t.progress;
-        task.style += t;
-        t += t.style.width;
-        t += t;
-        t.classList.add('progress');
-        t += t.progress;
-        t += t;
-        task.forEach(t => t => {
-          t.timeSpent += parseInt(t.timeSpent || '0');
-          t.progress += t;
-          t += t.progress;
-          t.style.width += t;
-          t += t.classList;
-          t += t.progress;
-          t += t;
-          t += t;
-          t += t;
-        });
-        });
-        t.forEach((t => {
-          t += t.timeSpent;
-          t += t.progress;
-          t += t.style;
-          t += t.classList;
-          t += t.progress;
-          t += t;
-          t += t;
-        });
-        t += t;
-        });
-        t += t;
-      });
-      t += t.progress;
-      t += t;
-      tasks += t;
-    }
-    const tasks = forEach(task => {
-      const timeSpent = parseInt(task.timeSpent || '0');
-      const progress = task.progress || '0';
-      task.style += t;
-      t += t.time;
-      t += t;
-      t.classList += t;
-      t += t.progress';
-      t += t;
-    tasks.forEach(t => {
-      t.timeSpent += t;
-      t += t.progress;
-      t += t;
-      t += t;
-    });
-    });
-    tasks.forEach(t => {
-      t.timeSpent += t.timeSpent || '0';
-      t.progress += t;
-      t += t;
-      t += t;
-      t += t;
-    });
-    });
-    tasks.forEach(t => t => {
-      t.time += t;
-      t.timeSpent += t.timeSpent || '0';
-      t.progress += t;
-      t += t;
-      t += t;
-      t += t;
-      t += t;
-    });
-    t += t;
-    });
-  );
-  pendingTasksDiv.classList += 'hidden';
-    tasks.forEach(task => {
-      task.timeSpent += t.timeSpent || '0';
-      task.progress += t;
-      t += t;
-      t += t;
-      t += t;
-      t += t;
-    });
-    t += t;
-    tasks += t;
-  );
-  
-  const reportButton = new document.createElement('Button');
-  reportButton.id = 'report-button';
-  reportButton.classList.textContent = 'Report';
-  tasks.forEach(t => {
-    t.timeSpent += t.timeSpent || '0';
-    t.progress += t;
-    t += t;
-    t += t;
-    t += t;
-  });
-  t += t;
-  reportButton.classList.add('btn', classList.add('mt-2'));
-  tasks.forEach(t => {
-    t.timeSpent += t.timeSpent || '0';
-    t += t;
-    t += t;
-  t += t;
-  });
-  t += t;
-  reportButton.addEventListener('click', onclick => {
-    t += showHoursReport(t);
-    tasks.forEach(t => {
-      t.time += t.timeSpent || '0';
-      t += t.progress;
-      t += t;
-      t += t;
-    });
-    t += t;
-    );
-    t += t;
-  );
-  const existingButton = document.getElementById('hours-report');
-  existingButton.classList = document.getElementById('hours-report-btn');
-  if (existingButton.classList) existingButton.remove();
-  
-  existingButton.classList.remove('btn');
-  existingButton.remove();
-  document.getElementById('dashboard');
-  existingButton(reportButton);
-  reportButton.appendChild(reportButton);
-  
-  existingButton.classList.add('existing-button');
-  existingButton.remove();
-  document.getElementsById('dashboard').appendChild(document);
-  reportButton.appendChild(reportButton);
-  
-  
-  document.getElementById('dashboard').classList.appendChild(reportButton);
-  
-  existingButton.classList.add('existing');
-  existingButton.remove();
-  document.getElementById('dashboard').append(reportButton);
-  reportButton.appendChild(document);
+      const safeTotalMinutes = isNaN(totalCompletedMinutes) ? 0 : totalCompletedMinutes;
+      progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalMinutes} / ${totalRequiredMinutes} minutes)`;
+      pendingRequestsDiv.classList.add('hidden');
+
+      const reportButton = document.createElement('button');
+      reportButton.id = 'report-button';
+      reportButton.textContent = 'View Hours Report';
+      reportButton.classList.add('btn', 'mt-2');
+      reportButton.onclick = () => showHoursReport();
+      const existingButton = document.getElementById('report-button');
+      if (existingButton) existingButton.remove();
+      document.getElementById('dashboard').appendChild(reportButton);
+  }
   } catch (error) {
     console.error('Error updating dashboard:', error);
   } finally {
-    hideLoadingSpinner(errorSpinner);
+    hideLoadingSpinner(spinner);
   }
 }
 
 async function showHoursReport() {
   const userEmail = localStorage.getItem('userEmail');
   const userRole = localStorage.getItem('userRole');
-  const userTeam = await window.utils.fetchUserTasks();
-  const tasksList = fetchUserTasks();
-  const tasks = await window.utils.fetchTasks();
-  const userTeamTasks = localStorage.getItem('tasks');
-  const selectedTermTasks = userTasks || 'Sheet1';
-  tasks tasks = [];
+  const userTeam = localStorage.getItem('userTeam');
+  const selectedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   let tasks;
-  try {
-    tasks = await window.utils.fetchUserTasks();
-  tasks.forEach(task => {
-    task.timeSpent += t;
-    t += t;
-    t += t;
-    tasks += t;
-    t += t;
-  });
-  tasks += t;
-  } catch (error) {
-    console.error('Error fetching tasks:', error);
-  }
   if (!window.utils) {
-    console.error('window.utils is not defined');
+    console.error('window.utils is not defined. Cannot fetch tasks.');
     return;
   }
   if (!accessToken) {
-    console.error('No access token available');
+    console.error('No access token available for hours report');
     tokenClient.requestAccessToken();
     return;
   }
-
   try {
-    const spinner = await showLoadingSpinner();
-    tasks = await fetchTasks();
-    tasks.forEach(task => {
-      task.time += t;
-      t += t;
-      tasks += t;
-      t += t;
-    });
-    t += t;
-    );
-    if (tasks.forEach(t => {
-      t.time += t;
-      t += t.time;
-      t += t;
-      t += t;
-      tasks += t;
-      t += t;
-    });
-    ) {
-      tasks = await t.fetchTasks();
-      tasks.forEach(task => {
-        t.timeSpent += t;
-        t += t;
-        t += t;
-        tasks += t;
-        t += t;
-      });
-      t += t;
-      );
-    } else if (tasks.filter(t => {
-      tasks = await t.fetchTasks();
-      t.forEach(task => {
-        t.time += t;
-        t += t;
-        tasks += t;
-        t += t;
-      });
-      t += t;
-      );
+    const spinner = showLoadingSpinner();
+    if (userRole === 'Advisor' || userRole === 'Chief Editor') {
+      tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
+    } else if (userRole === 'Editor') {
+      tasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
     } else {
-      tasks = await fetchUserTasks();
-      tasks.forEach(t => {
-        t.time += t.timeSpent;
-        t += t;
-      t += t;
-      t += t;
-      tasks += t;
-    });
-    t += t;
-    );
+      tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
     }
 
-    const tasks.forEach((task => {
-      task.time += t.timeSpent;
-      tasks += t;
-      t += t;
-      tasks += t;
-      t += t;
-    });
-    let totalTasks = t;
-    tasks.forEach(t => {
-      t.time += t;
-      t += t;
-      t += t;
-      tasks += t;
-      t += t;
-      totalTasks += t;
-    });
-    t += t;
-    let html = t`<h3>Hours Report for ${selectedTerm}</h3>`;
+    let totalMinutes = 0;
+    let html = `<h3>Hours Report for ${selectedTerm}</h3><ul>`;
     tasks.forEach(task => {
-      t.time += t;
-      t += t;
-      t += t;
-      tasks += t;
-      t += t;
-      total += t;
-      t += t;
+      const timeSpent = parseFloat(task.timeSpent) || 0;
+      const creationDate = task.creationDate ? new Date(task.creationDate).toLocaleString() : 'N/A';
+      const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : 'N/A';
+      html += `<li>${task.userEmail || 'N/A'}: ${task.description || 'N/A'} - ${timeSpent} minutes (${(timeSpent / 60).toFixed(2)} hours), Completed: ${completionDate}, Status: ${task.status || 'N/A'}</li>`;
+      totalMinutes += timeSpent;
     });
-    tasks.forEach((task => {
-      t.timeSpent += t.timeSpent || t0;
-      t += t;
-      t += t;
-      t += t;
-      tasks += t;
-      t += t;
-      t += t;
-      t += t;
-      html += t;
-      h += t;
-      t += t;
-    );
-    tasks += t;
-  );
-    tasks.forEach((task => {
-      const timeSpent = parseFloat(task.timeSpent || parseFloat(0));
-      const tasks = task.timeSpent || 0;
-      const completionDate = task.completionDate || task.date || task.completionDate || '0';
-      const date = completionDate ? new Date(task.completionDate.toLocaleString() : '0';
-      tasks.forEach(task => {
-        task.timeSpent += parseFloat(task.timeSpent || 0);
-        task.time += t;
-        t += completionDate;
-        t += t;
-        task.time += t;
-        tasks += t;
-        t += t;
-        t += t;
-        t += t;
-        t += t;
-        t += t;
-        html += t;
-        h += t;
-      });
-      t += t;
-      += t;
-      html += `<li>${task.userEmail || 'userEmail:'N/A'}: ${task.description || 'N/A'} - ${timeSpent} minutes (${parseFloat(task.timeSpent / parseFloat(60)).toFixed(2)} hours), Completed: ${completionDate || 'N/A'}, Status: ${task.status || 'N/A'}0</li>`;
-      } += task;
-      tasks += t;
-      t += t;
-      t += t;
-      total += t;
-      totalMinutes += t;
-    });
-    tasks.forEach(( => t => {
-      t.time += t.timeSpent || t0;
-      t += t;
-      t += t;
-      t += t;
-      t += t;
-      total += t;
-      t += t;
-      t += t;
-      t += t;
-      t += t;
-      h += t;
-      t += t;
-    });
-    t += t;
-    );
-    tasks += `</ul><p>Total: ${(totalMinutes / parseFloat(t60).toFixed(2)} hours (${parseInt(totalMinutes)} minutes))`;
-    tasks.forEach(task => {
-      task.time += t.timeSpent || t0;
-      t += t;
-      t += t;
-      tasks += t;
-      t += t;
-      t += t;
-      total += t;
-      t += t;
-      t += t;
-      h += t;
-      t += t;
-      t += t;
-    });
-    t += t;
+    html += `</ul><p>Total: ${(totalMinutes / 60).toFixed(2)} hours (${totalMinutes} minutes)</p>`;
     const content = document.getElementById('hours-report-content');
     content.innerHTML = html;
-    content.innerHTML = h;
-    tasks.forEach(task => {
-      task.time += t.timeSpent;
-      t += t;
-      t += t;
-      tasks += t;
-      t += t;
-      t += t;
-      t += t;
-      t += t;
-      t += t;
-      h += t;
-      t += t;
-      t += t;
-      t += t;
-    });
-    t += t;
-  content.classList = html + h;
-  tasks.forEach(t => {
-    t.time += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    t += t;
-    h += t;
-  });
-  t += t;
-  closeAllModals();
-  document.getElementById('hours-report-modal').classList.remove('hidden');
-  document.getElementById('hours-report-modal').classList.add('visible');
+    closeAllModals();
+    document.getElementById('hours-report-modal').classList.remove('hidden');
+    document.getElement displacementById('hours-report-modal').classList.add('visible');
   } catch (error) {
     console.error('Error generating hours report:', error);
-    tasks.forEach(error => {
-      console.error('Error generating error:', error);
-      tasks += error;
-      error => error;
-    });
-    error += error;
   } finally {
     hideLoadingSpinner(spinner);
-    tasks.forEach(spinner => {
-      spinner.hideSpinner(spinner);
-      tasks += spinner;
-      spinner => spinner;
-      s += spinner;
-    });
-    s += s;
   }
 }
 

@@ -23,6 +23,26 @@ function closeAllModals() {
   });
 }
 
+function showLoadingSpinner() {
+  const spinner = document.createElement('div');
+  spinner.id = 'loading-spinner';
+  spinner.innerHTML = 'Loading...';
+  spinner.style.position = 'fixed';
+  spinner.style.top = '50%';
+  spinner.style.left = '50%';
+  spinner.style.transform = 'translate(-50%, -50%)';
+  spinner.style.padding = '10px 20px';
+  spinner.style.background = 'rgba(0, 0, 0, 0.7)';
+  spinner.style.color = '#fff';
+  spinner.style.borderRadius = '5px';
+  document.body.appendChild(spinner);
+  return spinner;
+}
+
+function hideLoadingSpinner(spinner) {
+  if (spinner) spinner.remove();
+}
+
 function initializeGoogleAuth() {
   if (!window.google) {
     console.error('Google Identity Services not loaded');
@@ -43,7 +63,6 @@ function initializeGoogleAuth() {
     callback: (tokenResponse) => {
       accessToken = tokenResponse.access_token;
       console.log('New access token:', accessToken);
-      console.log('Token response:', tokenResponse);
       fetchUserInfo();
     },
     hd: 'graniteschools.org',
@@ -95,6 +114,7 @@ async function fetchUserInfo() {
       tokenClient.requestAccessToken();
       return;
     }
+    const spinner = showLoadingSpinner();
     const response = await fetch('https://www.googleapis.com/userinfo/v2/me', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
@@ -122,6 +142,8 @@ async function fetchUserInfo() {
   } catch (error) {
     console.error('Error fetching user info:', error);
     logout();
+  } finally {
+    hideLoadingSpinner(document.getElementById('loading-spinner'));
   }
 }
 
@@ -198,6 +220,7 @@ function initGoogleSheets() {
     tokenClient.requestAccessToken();
     return;
   }
+  const spinner = showLoadingSpinner();
   const userEmail = localStorage.getItem('userEmail');
   const userTeam = localStorage.getItem('userTeam');
   const userRole = localStorage.getItem('userRole');
@@ -215,6 +238,8 @@ function initGoogleSheets() {
     updateDashboard();
   }).catch(error => {
     console.error('Failed to load tasks:', error);
+  }).finally(() => {
+    hideLoadingSpinner(spinner);
   });
 }
 
@@ -239,14 +264,14 @@ document.addEventListener('DOMContentLoaded', () => {
         taskType: 'Profile Setup',
         description: `User assigned to ${userTeam} as ${userRole}`,
         timeSpent: '0',
-        status: 'Completed',
+        status: 'Approved',
         artifactLink: '',
         editorNotes: '',
         editorEmail: '',
         userTeam: userTeam,
         userRole: userRole,
         creationDate: new Date().toISOString(),
-        completionDate: ''
+        completionDate: new Date().toISOString()
       };
       console.log('Creating task:', taskData);
       if (!window.utils) {
@@ -259,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
       try {
+        const spinner = showLoadingSpinner();
         await window.utils.appendTask(accessToken, taskData, 'Sheet1', tokenClient);
         closeAllModals();
         const taskButtons = document.getElementById('task-buttons');
@@ -270,6 +296,8 @@ document.addEventListener('DOMContentLoaded', () => {
         initGoogleSheets();
       } catch (error) {
         console.error('Error appending task:', error);
+      } finally {
+        hideLoadingSpinner(spinner);
       }
     };
   } else {
@@ -293,6 +321,7 @@ document.getElementById('weekly-report-btn').onclick = async () => {
     return;
   }
   try {
+    const spinner = showLoadingSpinner();
     if (userRole === 'Advisor' || userRole === 'Chief Editor') {
       tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
     } else if (userRole === 'Editor') {
@@ -310,10 +339,9 @@ document.getElementById('weekly-report-btn').onclick = async () => {
 
     let weeklyTasks = tasks.filter(task => {
       const taskDate = new Date(task.submissionDate);
-      return taskDate >= startOfWeek && taskDate <= endOfWeek && task.status === 'Approved';
+      return task.submissionDate && !isNaN(taskDate) && taskDate >= startOfWeek && taskDate <= endOfWeek && task.status === 'Approved';
     });
 
-    // Sort tasks by time spent (descending)
     weeklyTasks.sort((a, b) => (parseFloat(b.timeSpent) || 0) - (parseFloat(a.timeSpent) || 0));
 
     const content = document.getElementById('weekly-report-content');
@@ -336,6 +364,8 @@ document.getElementById('weekly-report-btn').onclick = async () => {
     document.getElementById('weekly-report-modal').classList.add('visible');
   } catch (error) {
     console.error('Error generating weekly report:', error);
+  } finally {
+    hideLoadingSpinner(document.getElementById('loading-spinner'));
   }
 };
 
@@ -355,6 +385,7 @@ document.getElementById('overall-report-btn').onclick = async () => {
     return;
   }
   try {
+    const spinner = showLoadingSpinner();
     if (userRole === 'Advisor' || userRole === 'Chief Editor') {
       tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
     } else if (userRole === 'Editor') {
@@ -374,7 +405,7 @@ document.getElementById('overall-report-btn').onclick = async () => {
     const report = periods.map(period => {
       const periodTasks = tasks.filter(task => {
         const taskDate = new Date(task.submissionDate);
-        return taskDate >= period.start && taskDate <= period.end && task.status === 'Approved';
+        return task.submissionDate && !isNaN(taskDate) && taskDate >= period.start && taskDate <= period.end && task.status === 'Approved';
       });
       const totalTime = periodTasks.reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
       return { period: period.name, totalTime };
@@ -392,6 +423,8 @@ document.getElementById('overall-report-btn').onclick = async () => {
     document.getElementById('overall-report-modal').classList.add('visible');
   } catch (error) {
     console.error('Error generating overall report:', error);
+  } finally {
+    hideLoadingSpinner(document.getElementById('loading-spinner'));
   }
 };
 
@@ -459,12 +492,15 @@ document.getElementById('create-form').onsubmit = async (e) => {
     return;
   }
   try {
+    const spinner = showLoadingSpinner();
     await window.utils.appendTask(accessToken, taskData, selectedTerm, tokenClient);
     closeAllModals();
     document.getElementById('create-form').reset();
     initGoogleSheets();
   } catch (error) {
     console.error('Error creating task:', error);
+  } finally {
+    hideLoadingSpinner(spinner);
   }
 };
 
@@ -493,6 +529,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
   };
   console.log('Reporting task:', taskData);
   try {
+    const spinner = showLoadingSpinner();
     const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${selectedTerm}!A${rowIndex}:O${rowIndex}?valueInputOption=RAW`, {
       method: 'PUT',
       headers: {
@@ -532,6 +569,8 @@ document.getElementById('report-form').onsubmit = async (e) => {
     initGoogleSheets();
   } catch (error) {
     console.error('Error reporting task:', error);
+  } finally {
+    hideLoadingSpinner(spinner);
   }
 };
 
@@ -554,6 +593,7 @@ async function updateDashboard() {
   }
 
   try {
+    const spinner = showLoadingSpinner();
     if (userRole === 'Editor' || userRole === 'Advisor' || userRole === 'Chief Editor') {
       const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
       const pendingTasks = teamTasks.filter(task => task.status === 'Pending');
@@ -599,7 +639,6 @@ async function updateDashboard() {
               try {
                 e.target.disabled = true;
                 await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail, notes, tokenClient);
-                // Award 5 minutes credit to editor
                 const creditTask = {
                   userEmail: userEmail,
                   userName: localStorage.getItem('userName'),
@@ -631,7 +670,7 @@ async function updateDashboard() {
 
         document.querySelectorAll('.reject-task').forEach(checkbox => {
           checkbox.addEventListener('change', async (e) => {
-            if (e.target.checked) {
+            if (e.target.checked && confirm('Are you sure you want to reject this task?')) {
               const rowIndex = e.target.getAttribute('data-row');
               const term = e.target.getAttribute('data-term');
               const notes = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
@@ -647,6 +686,8 @@ async function updateDashboard() {
                 e.target.disabled = false;
                 e.target.checked = false;
               }
+            } else {
+              e.target.checked = false;
             }
           });
         });
@@ -669,10 +710,14 @@ async function updateDashboard() {
       reportButton.textContent = 'View Hours Report';
       reportButton.classList.add('btn', 'mt-2');
       reportButton.onclick = () => showHoursReport();
+      const existingButton = document.getElementById('hours-report-btn');
+      if (existingButton) existingButton.remove();
       document.getElementById('dashboard').appendChild(reportButton);
     }
   } catch (error) {
     console.error('Error updating dashboard:', error);
+  } finally {
+    hideLoadingSpinner(spinner);
   }
 }
 
@@ -692,6 +737,7 @@ async function showHoursReport() {
     return;
   }
   try {
+    const spinner = showLoadingSpinner();
     if (userRole === 'Advisor' || userRole === 'Chief Editor') {
       tasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
     } else if (userRole === 'Editor') {
@@ -717,6 +763,8 @@ async function showHoursReport() {
     document.getElementById('hours-report-modal').classList.add('visible');
   } catch (error) {
     console.error('Error generating hours report:', error);
+  } finally {
+    hideLoadingSpinner(spinner);
   }
 }
 

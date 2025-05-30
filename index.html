@@ -1,233 +1,176 @@
-<script type="text/javascript">
-        var gk_isXlsx = false;
-        var gk_xlsxFileLookup = {};
-        var gk_fileData = {};
-        function filledCell(cell) {
-          return cell !== '' && cell != null;
-        }
-        function loadFileData(filename) {
-        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
-            try {
-                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
-                var firstSheetName = workbook.SheetNames[0];
-                var worksheet = workbook.Sheets[firstSheetName];
-
-                // Convert sheet to JSON to filter blank rows
-                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-                // Filter out blank rows (rows where all cells are empty, null, or undefined)
-                var filteredData = jsonData.filter(row => row.some(filledCell));
-
-                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
-                var headerRowIndex = filteredData.findIndex((row, index) =>
-                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
-                );
-                // Fallback
-                if (headerRowIndex === -1 || headerRowIndex > 25) {
-                  headerRowIndex = 0;
-                }
-
-                // Convert filtered JSON back to CSV
-                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
-                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
-                return csv;
-            } catch (e) {
-                console.error(e);
-                return "";
-            }
-        }
-        return gk_fileData[filename] || "";
-        }
-        </script><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Yearbook Staff App</title>
-  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/; connect-src 'self' https://*.google.com https://*.googleapis.com;">
-  <link rel="icon" type="image/x-icon" href="/yearbook-staff-app/favicon.ico">  <link rel="stylesheet" href="styles.css">
+  <title>Yearbook Staff Management</title>
+  <link rel="icon" type="image/x-icon" href="/yearbook-staff-app/favicon.ico">
   <style>
-    .footer { position: fixed; bottom: 0; left: 0; width: 100%; padding: 5px 10px; font-size: 10px; text-align: center; border-top: 1px solid var(--border-color); z-index: 1000; }
-    .footer a { color: var(--link-color); text-decoration: none; margin: 0 5px; }
-    .footer a:hover { text-decoration: underline; }
-    .header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background-color: var(--header-bg); }
-    .theme-toggle { cursor: pointer; font-size: 14px; padding: 5px 10px; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--button-bg); color: var(--text-color); }
-    .theme-toggle:hover { background-color: var(--button-hover-bg); }
-    .term-selector { text-align: center; margin: 10px 0; }
-    .progress-bar { width: 100%; background-color: #f0f0f0; border-radius: 5px; margin: 10px 0; overflow: hidden; }
-    .progress { height: 20px; background-color: #4CAF50; text-align: right; padding-right: 5px; color: white; transition: width 0.4s ease; }
-    .pending-requests { margin-top: 20px; }
-    .pending-requests ul { list-style-type: none; padding: 0; }
-    .pending-requests li { padding: 5px 0; border-bottom: 1px solid var(--border-color); }
+    .modal { display: none; }
+    .hidden { display: none; }
+    .visible { display: block; }
+    .btn { margin: 5px; padding: 10px; }
+    .mt-2 { margin-top: 10px; }
+    #progress { background: #4caf50; height: 20px; text-align: center; color: white; }
   </style>
 </head>
 <body>
-  <div class="header">
+  <header>
     <h1>Yearbook Staff Management</h1>
-    <button id="theme-toggle" class="theme-toggle">Toggle Theme</button>
-  </div>
-  <div class="container">
-    <div id="user-info"></div>
-    <div class="progress-bar">
-      <div id="progress" class="progress">0%</div>
-    </div>
-    <div id="g_id_onload"
-         data-client_id="782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com"
-         data-login_uri="https://kappter.github.io/yearbook-staff-app/"
-         data-auto_prompt="false"
-         data-hd="graniteschools.org">
-    </div>
-    <button id="login-btn">Login with Granite</button>
-    <div id="term-selector" class="term-selector hidden">
-      <label for="term-select">Select Term: </label>
-      <select id="term-select">
-        <option value="Sheet1">Sheet1</option>
-        <option value="2025-26Summer">2025-26Summer</option>
-        <option value="2025-26Term01">2025-26Term01</option>
-        <option value="2025-26Term02">2025-26Term02</option>
-        <option value="2025-26Term03">2025-26Term03</option>
-        <option value="2025-26Term04">2025-26Term04</option>
-        <option value="Test01">Test01</option>
-        <option value="Test02">Test02</option>
-        <option value="Test03">Test03</option>
-        <option value="Test04">Test04</option>
-      </select>
-    </div>
-    <div id="pending-requests" class="pending-requests hidden">
-      <h3>Pending Requests</h3>
+    <button id="theme-toggle">Toggle Theme</button>
+  </header>
+
+  <main>
+    <section id="dashboard">
+      <div id="progress">0%</div>
+    </section>
+
+    <section id="user-info-section">
+      <p id="user-info"></p>
+      <button id="login-btn">Login with Granite</button>
+
+      <div id="term-selector" class="hidden">
+        <label for="term-select">Select Term: </label>
+        <select id="term-select">
+          <option value="Sheet1">Sheet1</option>
+          <option value="2025-26Summer">2025-26Summer</option>
+          <option value="2025-26Term01">2025-26Term01</option>
+          <option value="2025-26Term02">2025-26Term02</option>
+          <option value="2025-26Term03">2025-26Term03</option>
+          <option value="2025-26Term04">2025-26Term04</option>
+          <option value="Test01">Test01</option>
+          <option value="Test02">Test02</option>
+          <option value="Test03">Test03</option>
+          <option value="Test04">Test04</option>
+        </select>
+      </div>
+    </section>
+
+    <section id="pending-requests" class="hidden">
+      <h2>Pending Requests</h2>
       <div id="pending-requests-content"></div>
-    </div>
-    <div id="task-buttons" class="task-buttons hidden">
-      <button id="create-work-btn">Create Work</button>
-      <button id="report-work-btn">Report Work</button>
-      <button id="weekly-report-btn">Weekly Report</button>
-      <button id="overall-report-btn">Overall Report</button>
-      <button id="logout-btn">Logout</button>
-    </div>
+    </section>
 
-    <!-- First Login Modal -->
+    <section id="task-buttons" class="hidden">
+      <button id="create-work-btn" class="btn">Create Work</button>
+      <button id="report-work-btn" class="btn">Report Work</button>
+      <button id="weekly-report-btn" class="btn">Weekly Report</button>
+      <button id="overall-report-btn" class="btn">Overall Report</button>
+      <button id="logout-btn" class="btn">Logout</button>
+    </section>
+
     <div id="first-login-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>Welcome! Set Up Your Profile</h2>
-        <form id="first-login-form">
-          <div>
-            <label>Team</label>
-            <select id="user-team" required>
-              <option value="">Select a team</option>
-              <option value="Photography">Photography</option>
-              <option value="Writing">Writing</option>
-              <option value="Design">Design</option>
-              <option value="Copy">Copy</option>
-              <option value="Sidebar">Sidebar</option>
-              <option value="Leadership">Leadership</option>
-            </select>
-          </div>
-          <div id="role-selection" class="hidden">
-            <label>Role</label>
-            <select id="user-role" required>
-              <option value="">Select a role</option>
-            </select>
-          </div>
-          <div class="buttons">
-            <button type="submit">Save</button>
-          </div>
-        </form>
-      </div>
+      <h3>Welcome! Set Up Your Profile</h3>
+      <form id="first-login-form">
+        <div>
+          <label for="user-team">Team</label>
+          <select id="user-team" required>
+            <option value="">Select a team</option>
+            <option value="Photography">Photography</option>
+            <option value="Writing">Writing</option>
+            <option value="Design">Design</option>
+            <option value="Copy">Copy</option>
+            <option value="Sidebar">Sidebar</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div id="role-selection" class="hidden">
+          <label for="user-role">Role</label>
+          <select id="user-role" required>
+            <option value="">Select a role</option>
+          </select>
+        </div>
+        <div>
+          <button type="submit">Save</button>
+        </div>
+      </form>
     </div>
 
-    <!-- Create Work Modal -->
     <div id="create-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>Create Work</h2>
-        <form id="create-form">
-          <div>
-            <label>Task Type</label>
-            <select id="task-type">
-              <option value="Photographer">Photographer</option>
-              <option value="Headline Writer">Headline Writer</option>
-              <option value="Designer">Designer</option>
-              <option value="Leadership">Leadership</option>
-            </select>
-          </div>
-          <div>
-            <label>Team</label>
-            <select id="team">
-              <option value="Photography">Photography</option>
-              <option value="Writing">Writing</option>
-              <option value="Design">Design</option>
-              <option value="Copy">Copy</option>
-              <option value="Sidebar">Sidebar</option>
-              <option value="Leadership">Leadership</option>
-            </select>
-          </div>
-          <div>
-            <label>Description</label>
-            <textarea id="description" rows="3"></textarea>
-          </div>
-          <div>
-            <label>Estimated Time (Minutes)</label>
-            <input type="number" id="estimated-time" min="1" max="180">
-          </div>
-          <div class="buttons">
-            <button type="button" id="create-cancel">Cancel</button>
-            <button type="submit">Submit</button>
-          </div>
-        </form>
-      </div>
+      <h3>Create Work</h3>
+      <form id="create-form">
+        <div>
+          <label for="task-type">Task Type</label>
+          <select id="task-type" required>
+            <option value="Photographer">Photographer</option>
+            <option value="Headline Writer">Headline Writer</option>
+            <option value="Designer">Designer</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div>
+          <label for="team">Team</label>
+          <select id="team" required>
+            <option value="Photography">Photography</option>
+            <option value="Writing">Writing</option>
+            <option value="Design">Design</option>
+            <option value="Copy">Copy</option>
+            <option value="Sidebar">Sidebar</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div>
+          <label for="description">Description</label>
+          <input type="text" id="description" required>
+        </div>
+        <div>
+          <label for="estimated-time">Estimated Time (Minutes)</label>
+          <input type="number" id="estimated-time" required>
+        </div>
+        <div>
+          <button id="create-cancel" type="button">Cancel</button>
+          <button type="submit">Submit</button>
+        </div>
+      </form>
     </div>
 
-    <!-- Report Work Modal -->
     <div id="report-modal" class="modal hidden">
-      <div class="modal-content">
-        <h2>Report Work</h2>
-        <form id="report-form">
-          <div>
-            <label>Select Task</label>
-            <select id="task-select"></select>
-          </div>
-          <div>
-            <label>Artifact Link</label>
-            <input type="url" id="artifact-link" placeholder="e.g., Google Drive link">
-          </div>
-          <div>
-            <label>Actual Time Spent (Minutes)</label>
-            <input type="number" id="actual-time" min="1" max="180">
-          </div>
-          <div class="buttons">
-            <button type="button" id="report-cancel">Cancel</button>
-            <button type="submit">Submit</button>
-          </div>
-        </form>
-      </div>
+      <h3>Report Work</h3>
+      <form id="report-form">
+        <div>
+          <label for="task-select">Select Task</label>
+          <select id="task-select" required></select>
+        </div>
+        <div>
+          <label for="artifact-link">Artifact Link</label>
+          <input type="url" id="artifact-link">
+        </div>
+        <div>
+          <label for="actual-time">Actual Time Spent (Minutes)</label>
+          <input type="number" id="actual-time" required>
+        </div>
+        <div>
+          <button id="report-cancel" type="button">Cancel</button>
+          <button type="submit">Submit</button>
+        </div>
+      </form>
     </div>
 
-    <!-- Weekly Report Modal -->
-<div id="weekly-report-modal" class="modal hidden">
-  <h3>Weekly Report</h3>
-  <div id="weekly-report-content"></div>
-  <button id="weekly-report-close">Close</button>
-</div>
-
-<!-- Overall Report Modal -->
-<div id="overall-report-modal" class="modal hidden">
-  <h3>Overall Report</h3>
-  <div id="overall-report-content"></div>
-  <button id="overall-report-close">Close</button>
-</div>
-
-<!-- Hours Report Modal -->
-<div id="hours-report-modal" class="modal hidden">
-  <h3>Hours Report</h3>
-  <div id="hours-report-content"></div>
-  <button id="hours-report-close">Close</button>
-</div>
-    <!-- Fixed Footer -->
-    <div class="footer">
-      © 2025 Ken Kapptie | For educational use only | All rights reserved.
-      <a href="#">More tools like this</a> | 
-      <a href="#">Want your own?</a> | 
-      <a href="#">Learn by Typing</a>
+    <div id="weekly-report-modal" class="modal hidden">
+      <h3>Weekly Report</h3>
+      <div id="weekly-report-content"></div>
+      <button id="weekly-report-close">Close</button>
     </div>
-  </div>
-  <script src="utils.js" defer></script>
-  <script src="script.js" defer></script>
+
+    <div id="overall-report-modal" class="modal hidden">
+      <h3>Overall Report</h3>
+      <div id="overall-report-content"></div>
+      <button id="overall-report-close">Close</button>
+    </div>
+
+    <div id="hours-report-modal" class="modal hidden">
+      <h3>Hours Report</h3>
+      <div id="hours-report-content"></div>
+      <button id="hours-report-close">Close</button>
+    </div>
+
+    <footer>
+      <p>© 2025 Ken Kapptie | For educational use only | All rights reserved.</p>
+      <p><a href="#">More tools like this</a> | <a href="#">Want your own?</a> | <a href="#">Learn by Typing</a></p>
+    </footer>
+  </main>
+
+  <script src="utils.js"></script>
+  <script src="script.js"></script>
+</body>
 </html>

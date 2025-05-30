@@ -259,3 +259,12 @@ async function batchFetchTasks(accessToken, userEmail, userTeam, userRole, sheet
     return { openTasks: [], userTasks: [], teamTasks: [], allTasks: [] };
   }
 }
+window.utils = {
+  loadOpenTasks,
+  fetchUserTasks,
+  fetchTeamTasks,
+  fetchAllTasks,
+  appendTask,
+  updateTaskStatus,
+  batchFetchTasks
+};

@@ -310,18 +310,21 @@ document.getElementById('weekly-report-btn').onclick = async () => {
 
     let weeklyTasks = tasks.filter(task => {
       const taskDate = new Date(task.submissionDate);
-      return taskDate >= startOfWeek && taskDate <= endOfWeek;
+      return taskDate >= startOfWeek && taskDate <= endOfWeek && task.status === 'Approved';
     });
+
+    // Sort tasks by time spent (descending)
+    weeklyTasks.sort((a, b) => (parseFloat(b.timeSpent) || 0) - (parseFloat(a.timeSpent) || 0));
 
     const content = document.getElementById('weekly-report-content');
     if (weeklyTasks.length === 0) {
-      content.innerHTML = `<p>No tasks completed this week in ${selectedTerm}.</p>`;
+      content.innerHTML = `<p>No approved tasks completed this week in ${selectedTerm}.</p>`;
     } else {
       let totalTime = 0;
       let html = '<ul>';
       weeklyTasks.forEach(task => {
         const timeSpent = parseFloat(task.timeSpent) || 0;
-        html += `<li>${task.description} (${timeSpent} minutes, ${task.status})</li>`;
+        html += `<li>${task.description} (${timeSpent} minutes, ${task.status}, User: ${task.userEmail})</li>`;
         totalTime += timeSpent;
       });
       html += '</ul>';
@@ -551,7 +554,7 @@ async function updateDashboard() {
   }
 
   try {
-    if (userRole === 'Editor') {
+    if (userRole === 'Editor' || userRole === 'Advisor' || userRole === 'Chief Editor') {
       const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
       const pendingTasks = teamTasks.filter(task => task.status === 'Pending');
       pendingRequestsDiv.classList.remove('hidden');
@@ -564,7 +567,9 @@ async function updateDashboard() {
           const completionDate = task.completionDate ? new Date(task.completionDate).toLocaleString() : 'N/A';
           html += `
             <li data-row="${task.rowIndex}">
-              <input type="checkbox" class="approve-task" data-row="${task.rowIndex}" data-term="${selectedTerm}">
+              <input type="checkbox" class="approve-task" data-row="${task.rowIndex}" data-term="${selectedTerm}"> Approve
+              <input type="checkbox" class="reject-task" data-row="${task.rowIndex}" data-term="${selectedTerm}"> Reject
+              <input type="text" class="editor-notes" data-row="${task.rowIndex}" placeholder="Editor Notes">
               ${task.userEmail}: ${task.description} (${task.timeSpent} minutes)<br>
               Created: ${creationDate}<br>
               Completed: ${completionDate}<br>
@@ -579,29 +584,42 @@ async function updateDashboard() {
           checkbox.parentNode.replaceChild(newCheckbox, checkbox);
         });
 
+        document.querySelectorAll('.reject-task').forEach(checkbox => {
+          const newCheckbox = checkbox.cloneNode(true);
+          checkbox.parentNode.replaceChild(newCheckbox, checkbox);
+        });
+
         document.querySelectorAll('.approve-task').forEach(checkbox => {
           checkbox.addEventListener('change', async (e) => {
             if (e.target.checked) {
               const rowIndex = e.target.getAttribute('data-row');
               const term = e.target.getAttribute('data-term');
+              const notes = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
               console.log('Approving task at row:', rowIndex, 'in sheet:', term);
               try {
                 e.target.disabled = true;
-                await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail, tokenClient);
+                await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Approved', userEmail, notes, tokenClient);
+                // Award 5 minutes credit to editor
+                const creditTask = {
+                  userEmail: userEmail,
+                  userName: localStorage.getItem('userName'),
+                  team: userTeam,
+                  taskType: 'Task Approval',
+                  description: `Approved task: ${pendingTasks.find(task => task.rowIndex == rowIndex).description}`,
+                  timeSpent: '5',
+                  status: 'Approved',
+                  artifactLink: '',
+                  editorNotes: '',
+                  editorEmail: userEmail,
+                  userTeam: userTeam,
+                  userRole: userRole,
+                  creationDate: new Date().toISOString(),
+                  completionDate: new Date().toISOString()
+                };
+                await window.utils.appendTask(accessToken, creditTask, selectedTerm, tokenClient);
                 const taskItem = e.target.closest(`li[data-row="${rowIndex}"]`);
                 if (taskItem) taskItem.remove();
-                const teamTasks = await window.utils.fetchTeamTasks(accessToken, userTeam, selectedTerm, tokenClient);
-                const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
-                const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
-                const totalApprovedMinutes = teamTasks
-                  .filter(task => task.status === 'Approved')
-                  .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
-                const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
-                const progressBar = document.getElementById('progress');
-                progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-                const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
-                const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes;
-                progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
+                updateDashboard();
               } catch (error) {
                 console.error('Error approving task:', error);
                 e.target.disabled = false;
@@ -610,26 +628,29 @@ async function updateDashboard() {
             }
           });
         });
+
+        document.querySelectorAll('.reject-task').forEach(checkbox => {
+          checkbox.addEventListener('change', async (e) => {
+            if (e.target.checked) {
+              const rowIndex = e.target.getAttribute('data-row');
+              const term = e.target.getAttribute('data-term');
+              const notes = document.querySelector(`.editor-notes[data-row="${rowIndex}"]`).value;
+              console.log('Rejecting task at row:', rowIndex, 'in sheet:', term);
+              try {
+                e.target.disabled = true;
+                await window.utils.updateTaskStatus(accessToken, term, rowIndex, 'Rejected', userEmail, notes, tokenClient);
+                const taskItem = e.target.closest(`li[data-row="${rowIndex}"]`);
+                if (taskItem) taskItem.remove();
+                updateDashboard();
+              } catch (error) {
+                console.error('Error rejecting task:', error);
+                e.target.disabled = false;
+                e.target.checked = false;
+              }
+            }
+          });
+        });
       }
-
-      const totalMembers = [...new Set(teamTasks.map(task => task.userEmail))].length;
-      const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
-      const totalApprovedMinutes = teamTasks
-        .filter(task => task.status === 'Approved')
-        .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
-      const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
-      const progressBar = document.getElementById('progress');
-      progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-      const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
-      const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes;
-      progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
-
-      const reportButton = document.createElement('button');
-      reportButton.id = 'hours-report-btn';
-      reportButton.textContent = 'View Hours Report';
-      reportButton.classList.add('btn', 'mt-2');
-      reportButton.onclick = () => showHoursReport();
-      pendingRequestsDiv.appendChild(reportButton);
     } else if (userRole === 'Staff') {
       const tasks = await window.utils.fetchUserTasks(accessToken, userEmail, selectedTerm, tokenClient);
       const totalRequiredMinutes = 270;
@@ -649,20 +670,6 @@ async function updateDashboard() {
       reportButton.classList.add('btn', 'mt-2');
       reportButton.onclick = () => showHoursReport();
       document.getElementById('dashboard').appendChild(reportButton);
-    } else if (userRole === 'Advisor' || userRole === 'Chief Editor') {
-      const allTasks = await window.utils.fetchAllTasks(accessToken, selectedTerm, tokenClient);
-      const totalMembers = [...new Set(allTasks.map(task => task.userEmail))].length;
-      const totalRequiredMinutes = totalMembers > 0 ? totalMembers * 270 : 1;
-      const totalApprovedMinutes = allTasks
-        .filter(task => task.status === 'Approved')
-        .reduce((sum, task) => sum + (parseFloat(task.timeSpent) || 0), 0);
-      const progressPercentage = totalRequiredMinutes ? (totalApprovedMinutes / totalRequiredMinutes) * 100 : 0;
-      const progressBar = document.getElementById('progress');
-      progressBar.style.width = `${Math.min(progressPercentage, 100)}%`;
-      const safeTotalApprovedMinutes = isNaN(totalApprovedMinutes) ? 0 : totalApprovedMinutes;
-      const safeTotalRequiredMinutes = isNaN(totalRequiredMinutes) ? 1 : totalRequiredMinutes;
-      progressBar.textContent = `${Math.round(progressPercentage)}% (${safeTotalApprovedMinutes} / ${safeTotalRequiredMinutes} minutes)`;
-      pendingRequestsDiv.classList.add('hidden');
     }
   } catch (error) {
     console.error('Error updating dashboard:', error);

@@ -718,7 +718,7 @@ async function updateDashboard() {
       const existingButton = document.getElementById('report-button');
       if (existingButton) existingButton.remove();
       document.getElementById('dashboard').appendChild(reportButton);
-  }
+    }
   } catch (error) {
     console.error('Error updating dashboard:', error);
   } finally {
@@ -765,7 +765,7 @@ async function showHoursReport() {
     content.innerHTML = html;
     closeAllModals();
     document.getElementById('hours-report-modal').classList.remove('hidden');
-    document.getElement displacementById('hours-report-modal').classList.add('visible');
+    document.getElementById('hours-report-modal').classList.add('visible');
   } catch (error) {
     console.error('Error generating hours report:', error);
   } finally {

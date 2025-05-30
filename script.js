@@ -45,10 +45,10 @@ function hideLoadingSpinner(spinner) {
 
 function initializeGoogleAuth() {
   const state = JSON.parse(localStorage.getItem('authRedirectState'));
-if (state?.wasLoggingIn) {
-  localStorage.removeItem('authRedirectState');
-  // Restore UI state if needed
-}
+  if (state?.wasLoggingIn) {
+    localStorage.removeItem('authRedirectState');
+    checkFirstLogin();
+  }
   if (!window.google) {
     console.error('Google Identity Services not loaded');
     return;
@@ -72,26 +72,28 @@ if (state?.wasLoggingIn) {
     },
     hd: 'graniteschools.org',
     error_callback: (error) => {
-  console.error('OAuth error:', error);
-  if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
-    alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
-  } else {
-    alert('Authentication failed. Error: ' + error.message);
-  }
-}
+      console.error('OAuth error:', error);
+      if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
+        alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
+      } else {
+        alert('Authentication failed. Error: ' + error.message);
+      }
+    }
   });
-localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-tokenClient.requestAccessToken({ prompt: 'consent' });
+  localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+  tokenClient.requestAccessToken({ prompt: 'consent' });
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
     checkFirstLogin();
   } else {
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
   }
 
   document.getElementById('login-btn').onclick = () => {
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
   };
 
   const themeToggle = document.getElementById('theme-toggle');
@@ -121,7 +123,8 @@ async function fetchUserInfo() {
   try {
     if (!accessToken) {
       console.error('No access token available for user info fetch');
-      tokenClient.requestAccessToken();
+      localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+      tokenClient.requestAccessToken({ prompt: 'consent' });
       return;
     }
     const spinner = showLoadingSpinner();
@@ -131,7 +134,8 @@ async function fetchUserInfo() {
     if (!response.ok) {
       if (response.status === 401) {
         console.log('401 on user info, requesting new token');
-        tokenClient.requestAccessToken();
+        localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+        tokenClient.requestAccessToken({ prompt: 'consent' });
         return;
       }
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -227,7 +231,8 @@ function initGoogleSheets() {
   }
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   const spinner = showLoadingSpinner();
@@ -290,7 +295,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (!accessToken) {
         console.error('No access token available for task append');
-        tokenClient.requestAccessToken();
+        localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+        tokenClient.requestAccessToken({ prompt: 'consent' });
         return;
       }
       try {
@@ -354,7 +360,8 @@ document.getElementById('weekly-report-btn').onclick = async () => {
   }
   if (!accessToken) {
     console.error('No access token available for weekly report');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   try {
@@ -418,7 +425,8 @@ document.getElementById('overall-report-btn').onclick = async () => {
   }
   if (!accessToken) {
     console.error('No access token available for overall report');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   try {
@@ -513,7 +521,8 @@ document.getElementById('create-form').onsubmit = async (e) => {
   }
   if (!accessToken) {
     console.error('No access token available for task creation');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   try {
@@ -536,7 +545,8 @@ document.getElementById('report-form').onsubmit = async (e) => {
   if (!rowIndex) return;
   if (!accessToken) {
     console.error('No access token available for task report');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   const taskData = {
@@ -584,7 +594,8 @@ document.getElementById('report-form').onsubmit = async (e) => {
     if (!response.ok) {
       if (response.status === 401) {
         console.log('401 on report task, requesting new token');
-        tokenClient.requestAccessToken();
+        localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+        tokenClient.requestAccessToken({ prompt: 'consent' });
         return;
       }
       throw new Error(`Failed to report task: ${response.status}`);
@@ -613,7 +624,8 @@ async function updateDashboard() {
   }
   if (!accessToken) {
     console.error('No access token available for dashboard update');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
 
@@ -748,7 +760,8 @@ async function showHoursReport() {
   }
   if (!accessToken) {
     console.error('No access token available for hours report');
-    tokenClient.requestAccessToken();
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   try {

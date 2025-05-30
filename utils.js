@@ -1,6 +1,10 @@
-// Update existing functions to use cached data if available
 async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetName, tokenClient) {
-  const cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  let cache;
+  try {
+    cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  } catch (e) {
+    console.warn('Invalid cache, fetching fresh data:', e);
+  }
   if (cache && Date.now() - cache.timestamp < 5 * 60 * 1000) {
     const rows = cache.rows;
     if (userRole === 'Advisor' || userRole === 'Chief Editor') {
@@ -15,7 +19,7 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetNa
         rowIndex: rows.indexOf(row) + 2,
         userEmail: row[0],
         artifactLink: row[5] || '',
-        timeSpent: row[6] || 0,
+        timeSpent: parseFloat(row[6]) || 0,
         status: row[7],
         creationDate: row[13] || '',
         completionDate: row[14] || ''
@@ -32,11 +36,16 @@ async function loadOpenTasks(accessToken, userEmail, userTeam, userRole, sheetNa
 }
 
 async function fetchUserTasks(accessToken, userEmail, sheetName, tokenClient) {
-  const cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  let cache;
+  try {
+    cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  } catch (e) {
+    console.warn('Invalid cache, fetching fresh data:', e);
+  }
   if (cache && Date.now() - cache.timestamp < 5 * 60 * 1000) {
     return cache.rows.filter(row => row[0] === userEmail).map(row => ({
       description: row[4],
-      timeSpent: parseInt(row[6]) || 0,
+      timeSpent: parseFloat(row[6]) || 0,
       status: row[7],
       submissionDate: row[9],
       creationDate: row[13] || '',
@@ -48,17 +57,23 @@ async function fetchUserTasks(accessToken, userEmail, sheetName, tokenClient) {
 }
 
 async function fetchTeamTasks(accessToken, userTeam, sheetName, tokenClient) {
-  const cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  let cache;
+  try {
+    cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  } catch (e) {
+    console.warn('Invalid cache, fetching fresh data:', e);
+  }
   if (cache && Date.now() - cache.timestamp < 5 * 60 * 1000) {
     return cache.rows.filter(row => row[2] && row[2].toLowerCase() === userTeam.toLowerCase()).map(row => ({
       userEmail: row[0],
       description: row[4],
       artifactLink: row[5] || '',
-      timeSpent: parseInt(row[6]) || 0,
+      timeSpent: parseFloat(row[6]) || 0,
       status: row[7],
       submissionDate: row[9],
       creationDate: row[13] || '',
-      completionDate: row[14] || ''
+      completionDate: row[14] || '',
+      rowIndex: cache.rows.indexOf(row) + 2
     }));
   }
   const { teamTasks } = await batchFetchTasks(accessToken, '', userTeam, 'Editor', sheetName, tokenClient);
@@ -66,13 +81,18 @@ async function fetchTeamTasks(accessToken, userTeam, sheetName, tokenClient) {
 }
 
 async function fetchAllTasks(accessToken, sheetName, tokenClient) {
-  const cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  let cache;
+  try {
+    cache = JSON.parse(localStorage.getItem(`tasks_${sheetName}`));
+  } catch (e) {
+    console.warn('Invalid cache, fetching fresh data:', e);
+  }
   if (cache && Date.now() - cache.timestamp < 5 * 60 * 1000) {
     return cache.rows.map(row => ({
       userEmail: row[0],
       team: row[2],
       description: row[4],
-      timeSpent: parseInt(row[6]) || 0,
+      timeSpent: parseFloat(row[6]) || 0,
       status: row[7],
       submissionDate: row[9],
       creationDate: row[13] || '',
@@ -83,7 +103,10 @@ async function fetchAllTasks(accessToken, sheetName, tokenClient) {
   return allTasks;
 }
 
-async function appendTask(accessToken, taskData, sheetName) {
+async function appendTask(accessToken, taskData, sheetName, tokenClient) {
+  if (!taskData.userEmail || isNaN(parseFloat(taskData.timeSpent))) {
+    throw new Error('Invalid task data: userEmail and timeSpent are required.');
+  }
   const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/1Eca5Bjc1weVose02_saqVUnWvoYirNp1ymj26_UY780/values/${sheetName}!A1:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -107,6 +130,14 @@ async function appendTask(accessToken, taskData, sheetName) {
       ]]
     })
   });
+  if (!response.ok) {
+    if (response.status === 401) {
+      console.log('401 on append task, requesting new token');
+      tokenClient.requestAccessToken();
+      return;
+    }
+    throw new Error(`Failed to append task: ${response.status}`);
+  }
   return response.json();
 }
 
@@ -178,7 +209,7 @@ async function batchFetchTasks(accessToken, userEmail, userTeam, userRole, sheet
         userEmail: row[0],
         team: row[2],
         description: row[4],
-        timeSpent: parseInt(row[6]) || 0,
+        timeSpent: parseFloat(row[6]) || 0,
         status: row[7],
         submissionDate: row[9],
         creationDate: row[13] || '',
@@ -190,7 +221,7 @@ async function batchFetchTasks(accessToken, userEmail, userTeam, userRole, sheet
         rowIndex: rows.indexOf(row) + 2,
         userEmail: row[0],
         artifactLink: row[5] || '',
-        timeSpent: row[6] || 0,
+        timeSpent: parseFloat(row[6]) || 0,
         status: row[7],
         creationDate: row[13] || '',
         completionDate: row[14] || ''
@@ -199,11 +230,12 @@ async function batchFetchTasks(accessToken, userEmail, userTeam, userRole, sheet
         userEmail: row[0],
         description: row[4],
         artifactLink: row[5] || '',
-        timeSpent: parseInt(row[6]) || 0,
+        timeSpent: parseFloat(row[6]) || 0,
         status: row[7],
         submissionDate: row[9],
         creationDate: row[13] || '',
-        completionDate: row[14] || ''
+        completionDate: row[14] || '',
+        rowIndex: rows.indexOf(row) + 2
       }));
     } else {
       openTasks = rows.filter(row => row[7] === 'Open' && row[0] === userEmail && row[2] && row[2].toLowerCase() === userTeam.toLowerCase()).map(row => ({
@@ -213,7 +245,7 @@ async function batchFetchTasks(accessToken, userEmail, userTeam, userRole, sheet
       }));
       userTasks = rows.filter(row => row[0] === userEmail).map(row => ({
         description: row[4],
-        timeSpent: parseInt(row[6]) || 0,
+        timeSpent: parseFloat(row[6]) || 0,
         status: row[7],
         submissionDate: row[9],
         creationDate: row[13] || '',

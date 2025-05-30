@@ -1,7 +1,7 @@
 let tokenClient;
 let accessToken = null;
 let openTasks = [];
-document.addEventListener('DOMContentLoaded', loadGoogleScript);
+//document.addEventListener('DOMContentLoaded', loadGoogleScript);
 
 function closeAllModals() {
   const modals = document.querySelectorAll('.modal');

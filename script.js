@@ -44,6 +44,11 @@ function hideLoadingSpinner(spinner) {
 }
 
 function initializeGoogleAuth() {
+  const state = JSON.parse(localStorage.getItem('authRedirectState'));
+if (state?.wasLoggingIn) {
+  localStorage.removeItem('authRedirectState');
+  // Restore UI state if needed
+}
   if (!window.google) {
     console.error('Google Identity Services not loaded');
     return;
@@ -67,11 +72,16 @@ function initializeGoogleAuth() {
     },
     hd: 'graniteschools.org',
     error_callback: (error) => {
-      console.error('OAuth error:', error);
-      alert('Authentication failed. Please ensure popups are allowed and try again.');
-    }
+  console.error('OAuth error:', error);
+  if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
+    alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
+  } else {
+    alert('Authentication failed. Error: ' + error.message);
+  }
+}
   });
-
+localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+tokenClient.requestAccessToken({ prompt: 'consent' });
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');

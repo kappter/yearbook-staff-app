@@ -62,34 +62,33 @@ function initializeGoogleAuth() {
   termSelector.classList.add('hidden');
   termSelector.classList.remove('visible');
 
- tokenClient = google.accounts.oauth2.initTokenClient({
-  client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
-  scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-  callback: (tokenResponse) => {
-    accessToken = tokenResponse.access_token;
-    console.log('New access token:', accessToken);
-    fetchUserInfo();
-  },
-  hd: 'graniteschools.org',
-  error_callback: (error) => {
-    console.error('OAuth error:', error);
-    if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
-      alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
-    } else {
-      alert('Authentication failed. Error: ' + error.message);
-    }
-  },
-  usePopup: false // Force redirect instead of popup
-});
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
+    callback: (tokenResponse) => {
+      accessToken = tokenResponse.access_token;
+      console.log('New access token:', accessToken);
+      fetchUserInfo();
+    },
+    hd: 'graniteschools.org',
+    error_callback: (error) => {
+      console.error('OAuth error:', error);
+      if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
+        alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
+      } else {
+        alert('Authentication failed. Error: ' + error.message);
+      }
+    },
+    usePopup: false // Force redirect instead of popup
+  });
   localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
   tokenClient.requestAccessToken({ prompt: 'consent' });
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin();
+    // Delay checkFirstLogin until token is available
   } else {
-    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    // No initial checkFirstLogin here; it will run after callback
   }
 
   document.getElementById('login-btn').onclick = () => {
@@ -115,7 +114,7 @@ function initializeGoogleAuth() {
   termSelect.addEventListener('change', () => {
     const selectedTerm = termSelect.value;
     localStorage.setItem('selectedTerm', selectedTerm);
-    initGoogleSheets();
+    initGoogleSheets(tokenClient); // Pass tokenClient
     updateDashboard();
   });
 }
@@ -198,7 +197,7 @@ function checkFirstLogin() {
     const termSelector = document.getElementById('term-selector');
     termSelector.classList.remove('hidden');
     termSelector.classList.add('visible');
-    initGoogleSheets();
+    initGoogleSheets(tokenClient); // Pass tokenClient
     updateDashboard();
   }
 }
@@ -225,7 +224,7 @@ function logout() {
   pendingRequests.classList.add('hidden');
 }
 
-function initGoogleSheets() {
+function initGoogleSheets(tokenClient) {
   if (!window.utils) {
     console.error('window.utils is not defined. Ensure utils.js is loaded.');
     return;
@@ -233,7 +232,7 @@ function initGoogleSheets() {
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
     localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   const spinner = showLoadingSpinner();

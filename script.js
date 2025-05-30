@@ -106,6 +106,8 @@ function initGoogleSheets(tokenClient) {
   });
 }
 
+document.addEventListener('DOMContentLoaded', loadGoogleScript);
+
 document.addEventListener('DOMContentLoaded', () => {
   const firstLoginForm = document.getElementById('first-login-form');
   if (firstLoginForm) {

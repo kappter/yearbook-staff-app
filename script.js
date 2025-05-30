@@ -81,19 +81,28 @@ function initializeGoogleAuth() {
     },
     usePopup: false // Force redirect instead of popup
   });
-  localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-  tokenClient.requestAccessToken({ prompt: 'consent' });
+
+  const fetchToken = () => {
+    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  };
+
+  // Retry token fetch if accessToken is still null after 1 second
+  fetchToken();
+  setTimeout(() => {
+    if (!accessToken && localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
+      console.log('Retrying token fetch due to null accessToken');
+      fetchToken();
+    }
+  }, 1000);
+
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
-    // Delay checkFirstLogin until token is available
-  } else {
-    // No initial checkFirstLogin here; it will run after callback
   }
 
   document.getElementById('login-btn').onclick = () => {
-    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    fetchToken();
   };
 
   const themeToggle = document.getElementById('theme-toggle');
@@ -114,7 +123,7 @@ function initializeGoogleAuth() {
   termSelect.addEventListener('change', () => {
     const selectedTerm = termSelect.value;
     localStorage.setItem('selectedTerm', selectedTerm);
-    initGoogleSheets(tokenClient); // Pass tokenClient
+    initGoogleSheets(tokenClient);
     updateDashboard();
   });
 }
@@ -197,7 +206,7 @@ function checkFirstLogin() {
     const termSelector = document.getElementById('term-selector');
     termSelector.classList.remove('hidden');
     termSelector.classList.add('visible');
-    initGoogleSheets(tokenClient); // Pass tokenClient
+    initGoogleSheets(tokenClient);
     updateDashboard();
   }
 }
@@ -310,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const termSelector = document.getElementById('term-selector');
         termSelector.classList.remove('hidden');
         termSelector.classList.add('visible');
-        initGoogleSheets();
+        initGoogleSheets(tokenClient);
       } catch (error) {
         console.error('Error appending task:', error);
       } finally {
@@ -320,7 +329,34 @@ document.addEventListener('DOMContentLoaded', () => {
   } else {
     console.error('Form with ID "first-login-form" not found.');
   }
-  // ... (rest of the event listener)
+
+  const weeklyReportClose = document.getElementById('weekly-report-close');
+  if (weeklyReportClose) {
+    weeklyReportClose.onclick = () => {
+      closeAllModals();
+      console.log('Weekly report modal closed');
+    };
+  } else {
+    console.warn('Element with ID "weekly-report-close" not found.');
+  }
+
+  const overallReportClose = document.getElementById('overall-report-close');
+  if (overallReportClose) {
+    overallReportClose.onclick = () => {
+      closeAllModals();
+    };
+  } else {
+    console.warn('Element with ID "overall-report-close" not found.');
+  }
+
+  const hoursReportClose = document.getElementById('hours-report-close');
+  if (hoursReportClose) {
+    hoursReportClose.onclick = () => {
+      closeAllModals();
+    };
+  } else {
+    console.warn('Element with ID "hours-report-close" not found.');
+  }
 });
 
 document.getElementById('weekly-report-btn').onclick = async () => {

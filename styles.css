@@ -51,7 +51,8 @@ body {
   padding: 20px;
   box-sizing: border-box;
   width: 100%;
-  background-color: var(--background-color); /* Ensure container has background */
+  background-color: var(--background-color);
+  border: 1px solid var(--border-color); /* Added border for visibility */
 }
 
 header {
@@ -86,7 +87,7 @@ button {
   background-color: var(--button-bg);
   color: var(--text-color);
   cursor: pointer;
-  width: auto; /* Changed from 100% to auto for better control */
+  width: auto;
   box-sizing: border-box;
 }
 
@@ -140,7 +141,7 @@ button:hover {
   background-color: var(--modal-bg);
   color: var(--text-color);
   padding: 20px;
-  border: 1px solid var(--border-color); /* Added border for frame */
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
@@ -306,8 +307,8 @@ textarea {
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 5px 10px;
-  font-size: 10px;
+  padding: 10px 20px; /* Increased padding for better visibility */
+  font-size: 12px; /* Increased font size */
   text-align: center;
   border-top: 1px solid var(--border-color);
   z-index: 500;

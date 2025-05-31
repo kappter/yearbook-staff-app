@@ -73,13 +73,12 @@ function checkFirstLogin(tokenClient) {
 
 function initGoogleSheets(tokenClient) {
   console.log('Initializing Google Sheets');
-  if (!window.utils) {
-    console.error('window.utils is not defined. Ensure utils.js is loaded.');
-    return;
-  }
+  if (!window.utils || initializing) return; // Guard clause
+  let initializing = true; // Prevent re-entry
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
     if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+    initializing = false;
     return;
   }
   const spinner = showLoadingSpinner();
@@ -102,8 +101,28 @@ function initGoogleSheets(tokenClient) {
     console.error('Failed to load tasks:', error);
   }).finally(() => {
     hideLoadingSpinner(spinner);
+    initializing = false;
   });
 }
+
+// Fix form submission (example—adjust based on actual code)
+document.querySelectorAll('form').forEach(form => {
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const spinner = showLoadingSpinner(); // Define spinner here
+    try {
+      const formData = new FormData(form);
+      // Example: Handle form submission (adjust logic)
+      console.log('Form submitted:', Object.fromEntries(formData));
+      await initGoogleSheets(tokenClient); // Reinitialize if needed
+      closeAllModals();
+    } catch (error) {
+      console.error('Form submission error:', error);
+    } finally {
+      hideLoadingSpinner(spinner);
+    }
+  };
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   const firstLoginForm = document.getElementById('first-login-form');

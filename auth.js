@@ -150,7 +150,7 @@ async function fetchUserInfo() {
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
-    // Removed checkFirstLogin call here
+    checkFirstLogin(tokenClient); // Reintroduced to ensure dashboard updates
   } catch (error) {
     console.error('Error fetching user info:', error);
     logout();

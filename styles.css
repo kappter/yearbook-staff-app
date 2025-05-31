@@ -38,17 +38,17 @@ body {
 }
 
 #app {
-  flex: 1 0 auto; /* Allow #app to grow but not shrink below content */
+  flex: 1 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-bottom: 60px; /* Ensure content clears fixed footer */
 }
 
 .container {
   max-width: 800px;
   margin: 20px auto;
   padding: 20px;
-  padding-bottom: 80px; /* Increased to account for footer height */
   box-sizing: border-box;
   width: 100%;
 }
@@ -74,7 +74,7 @@ button {
   background-color: var(--button-bg);
   color: var(--text-color);
   cursor: pointer;
-  width: 100%; /* Full width on mobile */
+  width: 100%;
   box-sizing: border-box;
 }
 
@@ -89,6 +89,10 @@ button:hover {
   justify-content: center;
 }
 
+.task-buttons.visible {
+  display: flex; /* Ensure flex display when visible */
+}
+
 .task-buttons button {
   flex: 1 1 auto;
   margin: 5px;
@@ -100,7 +104,7 @@ button:hover {
 }
 
 .visible {
-  display: block; /* Changed to flex where needed below */
+  display: block;
 }
 
 .modal {
@@ -113,7 +117,7 @@ button:hover {
   display: none;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Lowered to avoid conflicts */
+  z-index: 1000;
 }
 
 .modal.visible {
@@ -131,10 +135,10 @@ button:hover {
   box-sizing: border-box;
   max-height: 80vh;
   overflow-y: auto;
-  z-index: 1100; /* Above modal background */
+  z-index: 1100;
 }
 
-.modal-content h2 {
+.modal-content h2, .modal-content h3 {
   margin-top: 0;
 }
 
@@ -191,7 +195,7 @@ textarea {
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
   border-radius: 5px;
-  z-index: 1200; /* Above modals */
+  z-index: 1200;
 }
 
 /* Dynamic Button (View Hours Report) */
@@ -219,6 +223,10 @@ textarea {
   justify-content: center;
   align-items: center;
   margin-bottom: 20px;
+}
+
+.term-selector.visible {
+  display: flex; /* Ensure flex display when visible */
 }
 
 .term-selector label {
@@ -281,7 +289,9 @@ textarea {
 
 /* Footer and Header Adjustments */
 .footer {
-  position: relative; /* Changed from fixed to relative */
+  position: fixed;
+  bottom: 0;
+  left: 0;
   width: 100%;
   padding: 5px 10px;
   font-size: 10px;
@@ -290,7 +300,6 @@ textarea {
   z-index: 500;
   box-sizing: border-box;
   background-color: var(--footer-bg);
-  margin-top: auto; /* Push to bottom with flex */
 }
 
 .footer a {
@@ -311,7 +320,7 @@ textarea {
   background-color: var(--header-bg);
   width: 100%;
   box-sizing: border-box;
-  z-index: 600; /* Above content */
+  z-index: 600;
 }
 
 .theme-toggle {

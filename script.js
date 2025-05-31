@@ -71,10 +71,11 @@ function checkFirstLogin(tokenClient) {
   }
 }
 
+let initializing = false; // Move outside function scope to avoid TDZ
 function initGoogleSheets(tokenClient) {
   console.log('Initializing Google Sheets');
-  if (!window.utils || initializing) return; // Guard clause
-  let initializing = true; // Prevent re-entry
+  if (!window.utils || initializing) return; // Guard clause now works
+  initializing = true; // Set flag to prevent re-entry
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
     if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -105,16 +106,15 @@ function initGoogleSheets(tokenClient) {
   });
 }
 
-// Fix form submission (example—adjust based on actual code)
+// Fix form submission
 document.querySelectorAll('form').forEach(form => {
   form.onsubmit = async (event) => {
     event.preventDefault();
-    const spinner = showLoadingSpinner(); // Define spinner here
+    const spinner = showLoadingSpinner();
     try {
       const formData = new FormData(form);
-      // Example: Handle form submission (adjust logic)
       console.log('Form submitted:', Object.fromEntries(formData));
-      await initGoogleSheets(tokenClient); // Reinitialize if needed
+      await initGoogleSheets(tokenClient);
       closeAllModals();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -398,7 +398,7 @@ document.getElementById('create-form').onsubmit = async (e) => {
     await window.utils.appendTask(accessToken, taskData, selectedTerm, tokenClient);
     closeAllModals();
     document.getElementById('create-form').reset();
-    initGoogleSheets();
+    initGoogleSheets(tokenClient); // Pass tokenClient
   } catch (error) {
     console.error('Error creating task:', error);
   } finally {
@@ -470,7 +470,7 @@ document.getElementById('report-form').onsubmit = async (e) => {
     }
     closeAllModals();
     document.getElementById('report-form').reset();
-    initGoogleSheets();
+    initGoogleSheets(tokenClient); // Pass tokenClient
   } catch (error) {
     console.error('Error reporting task:', error);
   } finally {
@@ -663,6 +663,3 @@ async function showHoursReport() {
     hideLoadingSpinner(spinner);
   }
 }
-
-// Remove the second loadGoogleScript call
-// document.addEventListener('DOMContentLoaded', loadGoogleScript);

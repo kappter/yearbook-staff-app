@@ -29,6 +29,7 @@ function hideLoadingSpinner(spinner) {
 }
 
 function checkFirstLogin(tokenClient) {
+  console.log('Checking first login');
   const userTeam = localStorage.getItem('userTeam');
   const userRole = localStorage.getItem('userRole');
   if (!userTeam || !userRole) {
@@ -58,6 +59,7 @@ function checkFirstLogin(tokenClient) {
     firstLoginModal.classList.remove('hidden');
     firstLoginModal.classList.add('visible');
   } else {
+    console.log('User logged in, showing task buttons');
     const taskButtons = document.getElementById('task-buttons');
     taskButtons.classList.remove('hidden');
     taskButtons.classList.add('visible');
@@ -70,13 +72,14 @@ function checkFirstLogin(tokenClient) {
 }
 
 function initGoogleSheets(tokenClient) {
+  console.log('Initializing Google Sheets');
   if (!window.utils) {
     console.error('window.utils is not defined. Ensure utils.js is loaded.');
     return;
   }
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
-    if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); // Use passed tokenClient
+    if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
     return;
   }
   const spinner = showLoadingSpinner();

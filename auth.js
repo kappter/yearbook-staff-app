@@ -20,7 +20,15 @@ function initializeGoogleAuth() {
   const state = JSON.parse(localStorage.getItem('authRedirectState'));
   if (state?.wasLoggingIn) {
     localStorage.removeItem('authRedirectState');
-    checkFirstLogin();
+    // Delay checkFirstLogin until token is ready
+    const checkLogin = () => {
+      if (accessToken) {
+        checkFirstLogin();
+      } else {
+        setTimeout(checkLogin, 100); // Poll until token is available
+      }
+    };
+    checkLogin();
   }
   if (!window.google) {
     console.error('Google Identity Services not loaded');
@@ -47,15 +55,15 @@ function initializeGoogleAuth() {
     error_callback: (error) => {
       console.error('OAuth error:', error);
       if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
-        alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again. Forcing redirect...');
+        alert('Authentication failed. Forcing redirect...');
         localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
         tokenClient.requestAccessToken({ prompt: 'consent' });
       } else {
         alert('Authentication failed. Error: ' + error.message);
       }
     },
-    usePopup: false, // Explicitly disable popup
-    redirect_uri: 'https://kappter.github.io/yearbook-staff-app/' // Explicitly set redirect URI
+    usePopup: false,
+    redirect_uri: 'https://kappter.github.io/yearbook-staff-app/'
   });
 
   const fetchToken = () => {
@@ -74,6 +82,7 @@ function initializeGoogleAuth() {
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
+    checkFirstLogin(); // Call directly if token exists
   }
 
   document.getElementById('login-btn').onclick = () => {

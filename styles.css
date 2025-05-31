@@ -52,7 +52,7 @@ body {
   box-sizing: border-box;
   width: 100%;
   background-color: var(--background-color);
-  border: 1px solid var(--border-color); /* Added border for visibility */
+  border: 1px solid var(--border-color);
 }
 
 header {
@@ -307,8 +307,8 @@ textarea {
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 10px 20px; /* Increased padding for better visibility */
-  font-size: 12px; /* Increased font size */
+  padding: 10px 20px;
+  font-size: 12px;
   text-align: center;
   border-top: 1px solid var(--border-color);
   z-index: 500;

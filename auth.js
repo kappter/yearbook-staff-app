@@ -75,6 +75,28 @@ function initializeGoogleAuth() {
   document.getElementById('login-btn').onclick = () => {
     fetchToken();
   };
+
+  const themeToggle = document.getElementById('theme-toggle');
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  themeToggle.textContent = currentTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+
+  themeToggle.addEventListener('click', () => {
+    const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    themeToggle.textContent = newTheme === 'light' ? 'Dark Mode' : 'Light Mode';
+  });
+
+  const termSelect = document.getElementById('term-select');
+  const savedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
+  termSelect.value = savedTerm;
+  termSelect.addEventListener('change', () => {
+    const selectedTerm = termSelect.value;
+    localStorage.setItem('selectedTerm', selectedTerm);
+    initGoogleSheets(tokenClient);
+    updateDashboard();
+  });
 }
 
 async function fetchUserInfo() {
@@ -140,3 +162,5 @@ function logout() {
   const pendingRequests = document.getElementById('pending-requests');
   pendingRequests.classList.add('hidden');
 }
+
+document.addEventListener('DOMContentLoaded', loadGoogleScript);

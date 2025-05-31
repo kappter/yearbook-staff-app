@@ -1,5 +1,3 @@
-let tokenClient;
-let accessToken = null;
 let openTasks = [];
 
 function closeAllModals() {
@@ -104,8 +102,6 @@ function initGoogleSheets(tokenClient) {
     hideLoadingSpinner(spinner);
   });
 }
-
-document.addEventListener('DOMContentLoaded', loadGoogleScript);
 
 document.addEventListener('DOMContentLoaded', () => {
   const firstLoginForm = document.getElementById('first-login-form');
@@ -647,4 +643,5 @@ async function showHoursReport() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadGoogleScript);
+// Remove the second loadGoogleScript call
+// document.addEventListener('DOMContentLoaded', loadGoogleScript);

@@ -71,11 +71,11 @@ function checkFirstLogin(tokenClient) {
   }
 }
 
-let initializing = false; // Move outside function scope to avoid TDZ
+let initializing = false;
 function initGoogleSheets(tokenClient) {
   console.log('Initializing Google Sheets');
-  if (!window.utils || initializing) return; // Guard clause now works
-  initializing = true; // Set flag to prevent re-entry
+  if (!window.utils || initializing) return;
+  initializing = true;
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
     if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -106,7 +106,6 @@ function initGoogleSheets(tokenClient) {
   });
 }
 
-// Fix form submission
 document.querySelectorAll('form').forEach(form => {
   form.onsubmit = async (event) => {
     event.preventDefault();
@@ -157,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Creating task:', taskData);
       if (!window.utils) {
         console.error('window.utils is not defined. Cannot append task.');
+        alert('Utility functions are not loaded. Please try again later.');
         return;
       }
       if (!accessToken) {
@@ -169,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         spinner = showLoadingSpinner();
         await window.utils.appendTask(accessToken, taskData, 'Sheet1', tokenClient);
+        console.log('First login task appended successfully');
         closeAllModals();
         const taskButtons = document.getElementById('task-buttons');
         taskButtons.classList.remove('hidden');
@@ -179,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         initGoogleSheets(tokenClient);
       } catch (error) {
         console.error('Error appending task:', error);
+        alert('Failed to complete first login setup. Please try again.');
       } finally {
         hideLoadingSpinner(spinner);
       }
@@ -215,6 +217,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Element with ID "hours-report-close" not found.');
   }
 });
+
+// Rest of script.js remains unchanged (omitted for brevity)
 
 document.getElementById('weekly-report-btn').onclick = async () => {
   const userEmail = localStorage.getItem('userEmail');

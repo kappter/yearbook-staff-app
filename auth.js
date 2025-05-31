@@ -6,6 +6,7 @@ function loadGoogleScript() {
   script.src = 'https://accounts.google.com/gsi/client';
   script.async = true;
   script.onload = () => {
+    console.log('Loading Google Script');
     initializeGoogleAuth();
   };
   script.onerror = () => {
@@ -15,6 +16,7 @@ function loadGoogleScript() {
 }
 
 function initializeGoogleAuth() {
+  console.log('Initializing Google Auth');
   const state = JSON.parse(localStorage.getItem('authRedirectState'));
   if (state?.wasLoggingIn) {
     localStorage.removeItem('authRedirectState');
@@ -45,12 +47,15 @@ function initializeGoogleAuth() {
     error_callback: (error) => {
       console.error('OAuth error:', error);
       if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
-        alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again.');
+        alert('Authentication failed. Please allow redirects or ensure popups are allowed and try again. Forcing redirect...');
+        localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
+        tokenClient.requestAccessToken({ prompt: 'consent' });
       } else {
         alert('Authentication failed. Error: ' + error.message);
       }
     },
-    usePopup: false // Force redirect instead of popup
+    usePopup: false, // Explicitly disable popup
+    redirect_uri: 'https://kappter.github.io/yearbook-staff-app/' // Explicitly set redirect URI
   });
 
   const fetchToken = () => {
@@ -58,7 +63,6 @@ function initializeGoogleAuth() {
     tokenClient.requestAccessToken({ prompt: 'consent' });
   };
 
-  // Retry token fetch if accessToken is still null after 1 second
   fetchToken();
   setTimeout(() => {
     if (!accessToken && localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
@@ -73,6 +77,7 @@ function initializeGoogleAuth() {
   }
 
   document.getElementById('login-btn').onclick = () => {
+    console.log('Login button clicked');
     fetchToken();
   };
 
@@ -82,6 +87,7 @@ function initializeGoogleAuth() {
   themeToggle.textContent = currentTheme === 'light' ? 'Dark Mode' : 'Light Mode';
 
   themeToggle.addEventListener('click', () => {
+    console.log('Theme toggle clicked');
     const newTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);

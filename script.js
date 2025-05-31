@@ -100,6 +100,7 @@ function initGoogleSheets(tokenClient) {
     updateDashboard();
   }).catch(error => {
     console.error('Failed to load tasks:', error);
+    alert('Failed to initialize Google Sheets. Please try again.');
   }).finally(() => {
     hideLoadingSpinner(spinner);
     initializing = false;
@@ -168,8 +169,8 @@ document.addEventListener('DOMContentLoaded', () => {
       let spinner;
       try {
         spinner = showLoadingSpinner();
-        await window.utils.appendTask(accessToken, taskData, 'Sheet1', tokenClient);
-        console.log('First login task appended successfully');
+        const response = await window.utils.appendTask(accessToken, taskData, 'Sheet1', tokenClient);
+        console.log('First login task appended successfully:', response);
         closeAllModals();
         const taskButtons = document.getElementById('task-buttons');
         taskButtons.classList.remove('hidden');
@@ -179,8 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
         termSelector.classList.add('visible');
         initGoogleSheets(tokenClient);
       } catch (error) {
-        console.error('Error appending task:', error);
-        alert('Failed to complete first login setup. Please try again.');
+        console.error('Error appending task:', error.message, error.stack);
+        alert('Failed to complete first login setup: ' + error.message);
       } finally {
         hideLoadingSpinner(spinner);
       }

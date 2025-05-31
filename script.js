@@ -28,7 +28,7 @@ function hideLoadingSpinner(spinner) {
   if (spinner) spinner.remove();
 }
 
-function checkFirstLogin() {
+function checkFirstLogin(tokenClient) {
   const userTeam = localStorage.getItem('userTeam');
   const userRole = localStorage.getItem('userRole');
   if (!userTeam || !userRole) {
@@ -76,8 +76,7 @@ function initGoogleSheets(tokenClient) {
   }
   if (!accessToken) {
     console.error('No access token available for initGoogleSheets');
-    localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-    if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' });
+    if (tokenClient) tokenClient.requestAccessToken({ prompt: 'consent' }); // Use passed tokenClient
     return;
   }
   const spinner = showLoadingSpinner();

@@ -42,7 +42,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 60px; /* Ensure content clears fixed footer */
+  padding-bottom: 60px;
 }
 
 .container {
@@ -51,6 +51,18 @@ body {
   padding: 20px;
   box-sizing: border-box;
   width: 100%;
+  background-color: var(--background-color); /* Ensure container has background */
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: var(--header-bg);
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 600;
 }
 
 header a {
@@ -61,7 +73,7 @@ header img {
   vertical-align: middle;
 }
 
-h1 {
+h1, h3 {
   text-align: center;
   margin-bottom: 20px;
 }
@@ -74,7 +86,7 @@ button {
   background-color: var(--button-bg);
   color: var(--text-color);
   cursor: pointer;
-  width: 100%;
+  width: auto; /* Changed from 100% to auto for better control */
   box-sizing: border-box;
 }
 
@@ -90,7 +102,7 @@ button:hover {
 }
 
 .task-buttons.visible {
-  display: flex; /* Ensure flex display when visible */
+  display: flex;
 }
 
 .task-buttons button {
@@ -128,6 +140,7 @@ button:hover {
   background-color: var(--modal-bg);
   color: var(--text-color);
   padding: 20px;
+  border: 1px solid var(--border-color); /* Added border for frame */
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
@@ -226,7 +239,7 @@ textarea {
 }
 
 .term-selector.visible {
-  display: flex; /* Ensure flex display when visible */
+  display: flex;
 }
 
 .term-selector label {
@@ -336,3 +349,6 @@ textarea {
 .theme-toggle:hover {
   background-color: var(--button-hover-bg);
 }
+
+/* Add Favicon */
+<link rel="icon" href="favicon.ico" type="image/x-icon">

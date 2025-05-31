@@ -20,12 +20,12 @@ function initializeGoogleAuth() {
   const state = JSON.parse(localStorage.getItem('authRedirectState'));
   if (state?.wasLoggingIn) {
     localStorage.removeItem('authRedirectState');
-    // Delay checkFirstLogin until token is ready
+    // Wait for token before proceeding
     const checkLogin = () => {
       if (accessToken) {
-        checkFirstLogin();
+        checkFirstLogin(tokenClient); // Pass tokenClient
       } else {
-        setTimeout(checkLogin, 100); // Poll until token is available
+        setTimeout(checkLogin, 100);
       }
     };
     checkLogin();
@@ -49,7 +49,8 @@ function initializeGoogleAuth() {
     callback: (tokenResponse) => {
       accessToken = tokenResponse.access_token;
       console.log('New access token:', accessToken);
-      fetchUserInfo();
+      // Force reload to reset context
+      window.location.reload();
     },
     hd: 'graniteschools.org',
     error_callback: (error) => {
@@ -82,7 +83,7 @@ function initializeGoogleAuth() {
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin(); // Call directly if token exists
+    checkFirstLogin(tokenClient); // Call directly if token exists
   }
 
   document.getElementById('login-btn').onclick = () => {
@@ -107,7 +108,7 @@ function initializeGoogleAuth() {
   const savedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   termSelect.value = savedTerm;
   termSelect.addEventListener('change', () => {
-    const selectedTerm = termSelect.value;
+    const selectedToken = localStorage.getItem('selectedTerm') || 'Sheet1';
     localStorage.setItem('selectedTerm', selectedTerm);
     initGoogleSheets(tokenClient);
     updateDashboard();
@@ -147,7 +148,7 @@ async function fetchUserInfo() {
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin();
+    checkFirstLogin(tokenClient); // Call after user info is set
   } catch (error) {
     console.error('Error fetching user info:', error);
     logout();

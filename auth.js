@@ -48,7 +48,7 @@ function initializeGoogleAuth() {
     callback: (tokenResponse) => {
       accessToken = tokenResponse.access_token;
       console.log('New access token:', accessToken);
-      localStorage.setItem('tokenProcessed', 'true'); // Flag to prevent loop
+      localStorage.setItem('tokenProcessed', 'true');
       fetchUserInfo();
     },
     hd: 'graniteschools.org',
@@ -68,7 +68,7 @@ function initializeGoogleAuth() {
 
   const fetchToken = () => {
     if (localStorage.getItem('tokenProcessed') === 'true') {
-      return; // Prevent re-authentication
+      return;
     }
     localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
     tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -110,7 +110,7 @@ function initializeGoogleAuth() {
   const savedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   termSelect.value = savedTerm;
   termSelect.addEventListener('change', () => {
-    const selectedTerm = termSelect.value; // Fixed typo: selectedToken -> selectedTerm
+    const selectedTerm = termSelect.value;
     localStorage.setItem('selectedTerm', selectedTerm);
     initGoogleSheets(tokenClient);
     updateDashboard();
@@ -150,7 +150,7 @@ async function fetchUserInfo() {
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin(tokenClient);
+    // Removed checkFirstLogin call here
   } catch (error) {
     console.error('Error fetching user info:', error);
     logout();
@@ -169,7 +169,7 @@ function logout() {
   localStorage.removeItem('userTeam');
   localStorage.removeItem('userRole');
   localStorage.removeItem('selectedTerm');
-  localStorage.removeItem('tokenProcessed'); // Clear token flag on logout
+  localStorage.removeItem('tokenProcessed');
   document.getElementById('user-info').innerText = '';
   document.getElementById('login-btn').classList.remove('hidden');
   const taskButtons = document.getElementById('task-buttons');

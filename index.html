@@ -4,190 +4,157 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yearbook Staff Management</title>
-  <link rel="icon" type="image/x-icon" href="/yearbook-staff-app/favicon.ico">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="header">
+  <header>
     <a href="/" style="display: inline-block; height: 50px;">
       <img src="yb.png" alt="Yearbook Logo" style="height: 100%; width: auto;">
     </a>
-    <h1>Yearbook Staff Management</h1>
     <span id="user-info"></span>
-    <button id="login-btn">Login</button>
+    <button id="login-btn">Login with Granite</button> <!-- Moved here -->
     <button id="theme-toggle">Dark Mode</button>
   </header>
 
-  <main class="container">
-    <section id="dashboard">
-      <div id="progress">0%</div>
-    </section>
+  <div id="app">
+    <div id="progress">0%</div>
 
-    <section id="user-info-section">
-      <p id="user-info"></p>
-      <button id="login-btn">Login with Granite</button>
+    <div id="term-selector" class="hidden">
+      <label for="term-select">Select Term: </label>
+      <select id="term-select">
+        <option value="Sheet1">Sheet1</option>
+        <option value="2025-26Summer">2025-26Summer</option>
+        <option value="2025-26Term01">2025-26Term01</option>
+        <option value="2025-26Term02">2025-26Term02</option>
+        <option value="2025-26Term03">2025-26Term03</option>
+        <option value="2025-26Term04">2025-26Term04</option>
+        <option value="Test01">Test01</option>
+        <option value="Test02">Test02</option>
+        <option value="Test03">Test03</option>
+        <option value="Test04">Test04</option>
+      </select>
+    </div>
 
-      <div id="term-selector" class="term-selector hidden">
-        <label for="term-select">Select Term: </label>
-        <select id="term-select">
-          <option value="Sheet1">Sheet1</option>
-          <option value="2025-26Summer">2025-26Summer</option>
-          <option value="2025-26Term01">2025-26Term01</option>
-          <option value="2025-26Term02">2025-26Term02</option>
-          <option value="2025-26Term03">2025-26Term03</option>
-          <option value="2025-26Term04">2025-26Term04</option>
-          <option value="Test01">Test01</option>
-          <option value="Test02">Test02</option>
-          <option value="Test03">Test03</option>
-          <option value="Test04">Test04</option>
-        </select>
-      </div>
-    </section>
-
-    <section id="pending-requests" class="hidden">
-      <h2>Pending Requests</h2>
+    <div id="pending-requests" class="hidden">
+      <h3>Pending Requests</h3>
       <div id="pending-requests-content"></div>
-    </section>
+    </div>
 
-    <section id="task-buttons" class="task-buttons hidden">
+    <div id="task-buttons" class="hidden">
       <button id="create-work-btn">Create Work</button>
       <button id="report-work-btn">Report Work</button>
       <button id="weekly-report-btn">Weekly Report</button>
       <button id="overall-report-btn">Overall Report</button>
       <button id="logout-btn">Logout</button>
-    </section>
+    </div>
 
     <div id="first-login-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Welcome! Set Up Your Profile</h3>
-        <form id="first-login-form">
-          <div>
-            <label for="user-team">Team</label>
-            <select id="user-team" required>
-              <option value="">Select a team</option>
-              <option value="Photography">Photography</option>
-              <option value="Writing">Writing</option>
-              <option value="Design">Design</option>
-              <option value="Copy">Copy</option>
-              <option value="Sidebar">Sidebar</option>
-              <option value="Leadership">Leadership</option>
-            </select>
-          </div>
-          <div id="role-selection" class="hidden">
-            <label for="user-role">Role</label>
-            <select id="user-role" required>
-              <option value="">Select a role</option>
-            </select>
-          </div>
-          <div class="buttons">
-            <button type="submit">Save</button>
-          </div>
-        </form>
-      </div>
+      <h3>Welcome! Set Up Your Profile</h3>
+      <form id="first-login-form">
+        <div>
+          <label for="user-team">Team</label>
+          <select id="user-team">
+            <option value="">Select a team</option>
+            <option value="Photography">Photography</option>
+            <option value="Writing">Writing</option>
+            <option value="Design">Design</option>
+            <option value="Copy">Copy</option>
+            <option value="Sidebar">Sidebar</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div id="role-selection" class="hidden">
+          <label for="user-role">Role</label>
+          <select id="user-role">
+            <option value="">Select a role</option>
+          </select>
+        </div>
+        <button type="submit">Save</button>
+      </form>
     </div>
 
     <div id="create-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Create Work</h3>
-        <form id="create-form">
-          <div>
-            <label for="task-type">Task Type</label>
-            <select id="task-type" required>
-              <option value="Photographer">Photographer</option>
-              <option value="Headline Writer">Headline Writer</option>
-              <option value="Designer">Designer</option>
-              <option value="Leadership">Leadership</option>
-            </select>
-          </div>
-          <div>
-            <label for="team">Team</label>
-            <select id="team" required>
-              <option value="Photography">Photography</option>
-              <option value="Writing">Writing</option>
-              <option value="Design">Design</option>
-              <option value="Copy">Copy</option>
-              <option value="Sidebar">Sidebar</option>
-              <option value="Leadership">Leadership</option>
-            </select>
-          </div>
-          <div>
-            <label for="description">Description</label>
-            <input type="text" id="description" required>
-          </div>
-          <div>
-            <label for="estimated-time">Estimated Time (Minutes)</label>
-            <input type="number" id="estimated-time" required>
-          </div>
-          <div class="buttons">
-            <button id="create-cancel" type="button">Cancel</button>
-            <button type="submit">Submit</button>
-          </div>
-        </form>
-      </div>
+      <h3>Create Work</h3>
+      <form id="create-form">
+        <div>
+          <label for="task-type">Task Type</label>
+          <select id="task-type">
+            <option value="Photographer">Photographer</option>
+            <option value="Headline Writer">Headline Writer</option>
+            <option value="Designer">Designer</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div>
+          <label for="team">Team</label>
+          <select id="team">
+            <option value="Photography">Photography</option>
+            <option value="Writing">Writing</option>
+            <option value="Design">Design</option>
+            <option value="Copy">Copy</option>
+            <option value="Sidebar">Sidebar</option>
+            <option value="Leadership">Leadership</option>
+          </select>
+        </div>
+        <div>
+          <label for="description">Description</label>
+          <textarea id="description"></textarea>
+        </div>
+        <div>
+          <label for="estimated-time">Estimated Time (Minutes)</label>
+          <input type="number" id="estimated-time" min="0">
+        </div>
+        <button type="button" id="create-cancel">Cancel</button>
+        <button type="submit">Submit</button>
+      </form>
     </div>
 
     <div id="report-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Report Work</h3>
-        <form id="report-form">
-          <div>
-            <label for="task-select">Select Task</label>
-            <select id="task-select" required></select>
-          </div>
-          <div>
-            <label for="artifact-link">Artifact Link</label>
-            <input type="url" id="artifact-link">
-          </div>
-          <div>
-            <label for="actual-time">Actual Time Spent (Minutes)</label>
-            <input type="number" id="actual-time" required>
-          </div>
-          <div class="buttons">
-            <button id="report-cancel" type="button">Cancel</button>
-            <button type="submit">Submit</button>
-          </div>
-        </form>
-      </div>
+      <h3>Report Work</h3>
+      <form id="report-form">
+        <div>
+          <label for="task-select">Select Task</label>
+          <select id="task-select"></select>
+        </div>
+        <div>
+          <label for="artifact-link">Artifact Link</label>
+          <input type="text" id="artifact-link">
+        </div>
+        <div>
+          <label for="actual-time">Actual Time Spent (Minutes)</label>
+          <input type="number" id="actual-time" min="0">
+        </div>
+        <button type="button" id="report-cancel">Cancel</button>
+        <button type="submit">Submit</button>
+      </form>
     </div>
 
     <div id="weekly-report-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Weekly Report</h3>
-        <div id="weekly-report-content"></div>
-        <div class="buttons">
-          <button id="weekly-report-close">Close</button>
-        </div>
-      </div>
+      <h3>Weekly Report</h3>
+      <div id="weekly-report-content"></div>
+      <button id="weekly-report-close">Close</button>
     </div>
 
     <div id="overall-report-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Overall Report</h3>
-        <div id="overall-report-content"></div>
-        <div class="buttons">
-          <button id="overall-report-close">Close</button>
-        </div>
-      </div>
+      <h3>Overall Report</h3>
+      <div id="overall-report-content"></div>
+      <button id="overall-report-close">Close</button>
     </div>
 
     <div id="hours-report-modal" class="modal hidden">
-      <div class="modal-content">
-        <h3>Hours Report</h3>
-        <div id="hours-report-content"></div>
-        <div class="buttons">
-          <button id="hours-report-close">Close</button>
-        </div>
-      </div>
+      <h3>Hours Report</h3>
+      <div id="hours-report-content"></div>
+      <button id="hours-report-close">Close</button>
     </div>
+  </div>
 
-    <footer class="footer">
-      <p>© 2025 Ken Kapptie | For educational use only | All rights reserved.</p>
-      <p>
-        <a href="https://kappter.github.io/portfolio/">More tools like this</a> |
-        <a href="https://kappter.github.io/portfolio/proposal.html">Want your own?</a> |
-      </p>
-    </footer>
-  </main>
+  <footer>
+    <p>© 2025 Ken Kapptie | For educational use only | All rights reserved.</p>
+    <p>
+      <a href="#">More tools like this</a> |
+      <a href="#">Want your own?</a> |
+    </p>
+  </footer>
 
   <script src="utils.js"></script>
   <script src="auth.js"></script>

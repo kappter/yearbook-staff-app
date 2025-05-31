@@ -20,10 +20,9 @@ function initializeGoogleAuth() {
   const state = JSON.parse(localStorage.getItem('authRedirectState'));
   if (state?.wasLoggingIn) {
     localStorage.removeItem('authRedirectState');
-    // Wait for token before proceeding
     const checkLogin = () => {
       if (accessToken) {
-        checkFirstLogin(tokenClient); // Pass tokenClient
+        checkFirstLogin(tokenClient);
       } else {
         setTimeout(checkLogin, 100);
       }
@@ -49,8 +48,8 @@ function initializeGoogleAuth() {
     callback: (tokenResponse) => {
       accessToken = tokenResponse.access_token;
       console.log('New access token:', accessToken);
-      // Force reload to reset context
-      window.location.reload();
+      localStorage.setItem('tokenProcessed', 'true'); // Flag to prevent loop
+      fetchUserInfo();
     },
     hd: 'graniteschools.org',
     error_callback: (error) => {
@@ -68,6 +67,9 @@ function initializeGoogleAuth() {
   });
 
   const fetchToken = () => {
+    if (localStorage.getItem('tokenProcessed') === 'true') {
+      return; // Prevent re-authentication
+    }
     localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
     tokenClient.requestAccessToken({ prompt: 'consent' });
   };
@@ -83,7 +85,7 @@ function initializeGoogleAuth() {
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
     document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin(tokenClient); // Call directly if token exists
+    checkFirstLogin(tokenClient);
   }
 
   document.getElementById('login-btn').onclick = () => {
@@ -108,7 +110,7 @@ function initializeGoogleAuth() {
   const savedTerm = localStorage.getItem('selectedTerm') || 'Sheet1';
   termSelect.value = savedTerm;
   termSelect.addEventListener('change', () => {
-    const selectedToken = localStorage.getItem('selectedTerm') || 'Sheet1';
+    const selectedTerm = termSelect.value; // Fixed typo: selectedToken -> selectedTerm
     localStorage.setItem('selectedTerm', selectedTerm);
     initGoogleSheets(tokenClient);
     updateDashboard();
@@ -148,7 +150,7 @@ async function fetchUserInfo() {
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin(tokenClient); // Call after user info is set
+    checkFirstLogin(tokenClient);
   } catch (error) {
     console.error('Error fetching user info:', error);
     logout();
@@ -167,6 +169,7 @@ function logout() {
   localStorage.removeItem('userTeam');
   localStorage.removeItem('userRole');
   localStorage.removeItem('selectedTerm');
+  localStorage.removeItem('tokenProcessed'); // Clear token flag on logout
   document.getElementById('user-info').innerText = '';
   document.getElementById('login-btn').classList.remove('hidden');
   const taskButtons = document.getElementById('task-buttons');

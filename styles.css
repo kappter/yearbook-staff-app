@@ -42,7 +42,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 100px; /* Increased further to ensure footer space */
+  padding-bottom: 120px; /* Increased to account for larger footer */
 }
 
 .container {
@@ -140,16 +140,16 @@ button:hover {
 .modal-content {
   background-color: var(--modal-bg) !important;
   color: var(--text-color) !important;
-  padding: 20px;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 500px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  box-sizing: border-box;
-  max-height: 80vh;
-  overflow-y: auto;
-  z-index: 1100;
+  padding: 20px !important;
+  border: 2px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  width: 90% !important;
+  max-width: 500px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  box-sizing: border-box !important;
+  max-height: 80vh !important;
+  overflow-y: auto !important;
+  z-index: 1100 !important;
 }
 
 .modal-content h2, .modal-content h3 {
@@ -287,8 +287,8 @@ textarea {
   }
 
   .modal-content {
-    max-width: 100%;
-    padding: 15px;
+    max-width: 100% !important;
+    padding: 15px !important;
   }
 
   .buttons {
@@ -307,13 +307,14 @@ textarea {
   bottom: 0;
   left: 0;
   width: 100%;
-  padding: 15px 20px; /* Increased padding */
-  font-size: 14px; /* Larger text */
+  padding: 15px 20px;
+  font-size: 14px;
   text-align: center;
   border-top: 1px solid var(--border-color);
   z-index: 500;
   box-sizing: border-box;
   background-color: var(--footer-bg);
+  line-height: 1.5; /* Ensure text doesn't overlap */
 }
 
 .footer a {
@@ -350,6 +351,3 @@ textarea {
 .theme-toggle:hover {
   background-color: var(--button-hover-bg);
 }
-
-/* Remove favicon link since file is missing */
-/* <link rel="icon" href="favicon.ico" type="image/x-icon"> */

@@ -37,17 +37,26 @@ body {
   flex-direction: column;
 }
 
+#app {
+  flex: 1 0 auto; /* Allow #app to grow but not shrink below content */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .container {
   max-width: 800px;
   margin: 20px auto;
   padding: 20px;
-  padding-bottom: 60px; /* Ensure content isn’t hidden under footer */
+  padding-bottom: 80px; /* Increased to account for footer height */
   box-sizing: border-box;
   width: 100%;
 }
+
 header a {
   padding: 10px;
 }
+
 header img {
   vertical-align: middle;
 }
@@ -91,7 +100,7 @@ button:hover {
 }
 
 .visible {
-  display: block;
+  display: block; /* Changed to flex where needed below */
 }
 
 .modal {
@@ -104,7 +113,7 @@ button:hover {
   display: none;
   justify-content: center;
   align-items: center;
-  z-index: 2000;
+  z-index: 1000; /* Lowered to avoid conflicts */
 }
 
 .modal.visible {
@@ -120,8 +129,9 @@ button:hover {
   max-width: 500px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
-  max-height: 80vh; /* Limit modal height */
-  overflow-y: auto; /* Enable vertical scrolling */
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 1100; /* Above modal background */
 }
 
 .modal-content h2 {
@@ -157,7 +167,7 @@ textarea {
 
 .buttons button {
   margin-left: 10px;
-  width: auto; /* Allow buttons to size naturally */
+  width: auto;
 }
 
 /* Progress Bar */
@@ -181,7 +191,7 @@ textarea {
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
   border-radius: 5px;
-  z-index: 3000;
+  z-index: 1200; /* Above modals */
 }
 
 /* Dynamic Button (View Hours Report) */
@@ -271,17 +281,16 @@ textarea {
 
 /* Footer and Header Adjustments */
 .footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
+  position: relative; /* Changed from fixed to relative */
   width: 100%;
   padding: 5px 10px;
   font-size: 10px;
   text-align: center;
   border-top: 1px solid var(--border-color);
-  z-index: 1000;
+  z-index: 500;
   box-sizing: border-box;
   background-color: var(--footer-bg);
+  margin-top: auto; /* Push to bottom with flex */
 }
 
 .footer a {
@@ -302,6 +311,7 @@ textarea {
   background-color: var(--header-bg);
   width: 100%;
   box-sizing: border-box;
+  z-index: 600; /* Above content */
 }
 
 .theme-toggle {

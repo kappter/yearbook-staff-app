@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Yearbook Staff App</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
   <div id="app">
@@ -35,6 +36,11 @@
       </div>
 
       <div id="dashboard">
+        <div id="progress-overview" class="hidden">
+          <h3>Progress Overview</h3>
+          <p id="progress-summary"></p>
+        </div>
+
         <div id="pending-requests" class="hidden">
           <h3>Pending Requests</h3>
           <div id="pending-requests-content"></div>
@@ -45,6 +51,7 @@
           <button id="report-work-btn">Report Work</button>
           <button id="weekly-report-btn">Weekly Report</button>
           <button id="overall-report-btn">Overall Report</button>
+          <button id="hours-report-btn">View Hours Report</button>
           <button id="logout-btn">Logout</button>
         </div>
       </div>

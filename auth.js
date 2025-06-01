@@ -66,7 +66,7 @@ function initializeGoogleAuth() {
         alert('Authentication failed. Error: ' + (error.message || 'Unknown error'));
       }
     },
-    usePopup: true, // Switch to popup-based flow
+    usePopup: true,
   });
 
   const fetchToken = (retryCount = 0) => {
@@ -74,15 +74,7 @@ function initializeGoogleAuth() {
       return;
     }
     localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-    tokenClient.requestAccessToken({ prompt: 'consent' }).catch(error => {
-      console.error('Token fetch failed:', error);
-      if (retryCount < 3) {
-        console.log(`Retrying token fetch (${retryCount + 1}/3)`);
-        setTimeout(() => fetchToken(retryCount + 1), 2000);
-      } else {
-        alert('Failed to authenticate after multiple attempts. Please check your network and try again.');
-      }
-    });
+    tokenClient.requestAccessToken({ prompt: 'consent' }); // Removed .catch since it doesn't return a Promise
   };
 
   fetchToken();
@@ -94,7 +86,10 @@ function initializeGoogleAuth() {
   }, 1000);
 
   if (localStorage.getItem('userEmail') && localStorage.getItem('userName')) {
-    document.getElementById('user-info').innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement) {
+      userInfoElement.innerText = `Welcome, ${localStorage.getItem('userName')} (${localStorage.getItem('userEmail')})`;
+    }
     document.getElementById('login-btn').classList.add('hidden');
     checkFirstLogin(tokenClient);
   }
@@ -157,7 +152,12 @@ async function fetchUserInfo() {
       logout();
       return;
     }
-    document.getElementById('user-info').innerText = `Welcome, ${userInfo.name} (${userInfo.email})`;
+    const userInfoElement = document.getElementById('user-info');
+    if (userInfoElement) {
+      userInfoElement.innerText = `Welcome, ${userInfo.name} (${userInfo.email})`;
+    } else {
+      console.warn('User info element not found');
+    }
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
@@ -181,7 +181,10 @@ function logout() {
   localStorage.removeItem('userRole');
   localStorage.removeItem('selectedTerm');
   localStorage.removeItem('tokenProcessed');
-  document.getElementById('user-info').innerText = '';
+  const userInfoElement = document.getElementById('user-info');
+  if (userInfoElement) {
+    userInfoElement.innerText = '';
+  }
   document.getElementById('login-btn').classList.remove('hidden');
   const taskButtons = document.getElementById('task-buttons');
   taskButtons.classList.add('hidden');

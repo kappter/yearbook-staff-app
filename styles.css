@@ -188,6 +188,13 @@ textarea {
   width: auto;
 }
 
+#user-info {
+  flex: 1;
+  text-align: center;
+  color: var(--text-color);
+  font-size: 14px;
+}
+
 /* Progress Bar */
 #progress {
   background: var(--progress-bg);

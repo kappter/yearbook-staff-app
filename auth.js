@@ -11,6 +11,7 @@ function loadGoogleScript() {
   };
   script.onerror = () => {
     console.error('Failed to load Google Identity Services script');
+    alert('Failed to load authentication services. Please try again later.');
   };
   document.head.appendChild(script);
 }
@@ -46,32 +47,42 @@ function initializeGoogleAuth() {
     client_id: '782915328509-4joueiu50j6kkned1ksk1ccacusblka5.apps.googleusercontent.com',
     scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
     callback: (tokenResponse) => {
-      accessToken = tokenResponse.access_token;
-      console.log('New access token:', accessToken);
-      localStorage.setItem('tokenProcessed', 'true');
-      fetchUserInfo();
+      if (tokenResponse && tokenResponse.access_token) {
+        accessToken = tokenResponse.access_token;
+        console.log('New access token:', accessToken);
+        localStorage.setItem('tokenProcessed', 'true');
+        fetchUserInfo();
+      } else {
+        console.error('No access token in response:', tokenResponse);
+        alert('Authentication failed. Please try again.');
+      }
     },
     hd: 'graniteschools.org',
     error_callback: (error) => {
       console.error('OAuth error:', error);
       if (error.type === 'popup_blocked' || error.type === 'popup_closed') {
-        alert('Authentication failed. Forcing redirect...');
-        localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-        tokenClient.requestAccessToken({ prompt: 'consent' });
+        alert('Authentication popup was blocked or closed. Please allow popups and try again.');
       } else {
-        alert('Authentication failed. Error: ' + error.message);
+        alert('Authentication failed. Error: ' + (error.message || 'Unknown error'));
       }
     },
-    usePopup: false,
-    redirect_uri: 'https://kappter.github.io/yearbook-staff-app/'
+    usePopup: true, // Switch to popup-based flow
   });
 
-  const fetchToken = () => {
+  const fetchToken = (retryCount = 0) => {
     if (localStorage.getItem('tokenProcessed') === 'true') {
       return;
     }
     localStorage.setItem('authRedirectState', JSON.stringify({ wasLoggingIn: true }));
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    tokenClient.requestAccessToken({ prompt: 'consent' }).catch(error => {
+      console.error('Token fetch failed:', error);
+      if (retryCount < 3) {
+        console.log(`Retrying token fetch (${retryCount + 1}/3)`);
+        setTimeout(() => fetchToken(retryCount + 1), 2000);
+      } else {
+        alert('Failed to authenticate after multiple attempts. Please check your network and try again.');
+      }
+    });
   };
 
   fetchToken();
@@ -150,7 +161,7 @@ async function fetchUserInfo() {
     localStorage.setItem('userEmail', userInfo.email);
     localStorage.setItem('userName', userInfo.name);
     document.getElementById('login-btn').classList.add('hidden');
-    checkFirstLogin(tokenClient); // Reintroduced to ensure dashboard updates
+    checkFirstLogin(tokenClient);
   } catch (error) {
     console.error('Error fetching user info:', error);
     logout();

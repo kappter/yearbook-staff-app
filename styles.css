@@ -42,7 +42,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 120px; /* Increased to account for larger footer */
+  padding-bottom: 120px;
 }
 
 .container {
@@ -72,6 +72,13 @@ header a {
 
 header img {
   vertical-align: middle;
+}
+
+#user-info {
+  flex: 1;
+  text-align: center;
+  color: var(--text-color);
+  font-size: 14px;
 }
 
 h1, h3 {
@@ -156,6 +163,22 @@ button:hover {
   margin-top: 0;
 }
 
+.modal-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.modal-content table th, .modal-content table td {
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  text-align: left;
+}
+
+.modal-content table th {
+  background-color: var(--header-bg);
+}
+
 form div {
   margin-bottom: 15px;
 }
@@ -188,14 +211,6 @@ textarea {
   width: auto;
 }
 
-#user-info {
-  flex: 1;
-  text-align: center;
-  color: var(--text-color);
-  font-size: 14px;
-}
-
-/* Progress Bar */
 #progress {
   background: var(--progress-bg);
   height: 20px;
@@ -206,7 +221,6 @@ textarea {
   margin-bottom: 20px;
 }
 
-/* Loading Spinner */
 #loading-spinner {
   position: fixed;
   top: 50%;
@@ -219,7 +233,6 @@ textarea {
   z-index: 1200;
 }
 
-/* Dynamic Button (View Hours Report) */
 .btn {
   padding: 10px 20px;
   margin: 5px;
@@ -238,7 +251,6 @@ textarea {
   margin-top: 10px;
 }
 
-/* Term Selector */
 .term-selector {
   display: flex;
   justify-content: center;
@@ -254,7 +266,6 @@ textarea {
   margin-right: 10px;
 }
 
-/* Pending Requests */
 #pending-requests ul {
   list-style: none;
   padding: 0;
@@ -265,7 +276,14 @@ textarea {
   border-bottom: 1px solid var(--border-color);
 }
 
-/* Mobile Responsiveness */
+#progress-overview {
+  margin-bottom: 20px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--header-bg);
+}
+
 @media (max-width: 600px) {
   .container {
     margin: 10px;
@@ -308,7 +326,6 @@ textarea {
   }
 }
 
-/* Footer and Header Adjustments */
 .footer {
   position: fixed;
   bottom: 0;
@@ -321,7 +338,7 @@ textarea {
   z-index: 500;
   box-sizing: border-box;
   background-color: var(--footer-bg);
-  line-height: 1.5; /* Ensure text doesn't overlap */
+  line-height: 1.5;
 }
 
 .footer a {
